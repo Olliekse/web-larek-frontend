@@ -2,6 +2,8 @@
 
 [Russian](#описание-проекта) | [English](#project-description)
 
+![UML diagram](https://github.com/user-attachments/assets/fba8dce7-9d44-4534-abe4-b47d55721fbc)
+
 # Project Description
 An e-commerce website for developers where you can purchase various developer-oriented products. The project includes a product catalog, shopping cart, and checkout process.
 
