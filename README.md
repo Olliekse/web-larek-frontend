@@ -2,7 +2,7 @@
 
 [Russian](#описание-проекта) | [English](#project-description)
 
-## Table of Contents
+# Table of Contents
 
 - [Project Description](#project-description)
 - [Architecture Overview](#architecture-overview)
@@ -20,7 +20,7 @@
 
 ![UML](https://github.com/user-attachments/assets/2213cf33-47f1-427e-a4c9-887dba1fa891)
 
-# Project Description
+## Project Description
 
 An e-commerce website for developers where you can purchase various developer-oriented products. The project includes a product catalog, shopping cart, and checkout process.
 
@@ -308,9 +308,7 @@ Fields:
 
 </details>
 
-# Описание проекта
-
-## Содержание
+# Содержание
 
 - [Описание проекта](#описание-проекта)
 - [Обзор архитектуры](#обзор-архитектуры)
@@ -325,6 +323,8 @@ Fields:
 - [Подход к разработке](#подход-к-разработке)
 - [Установка и запуск](#установка-и-запуск)
 - [Техническая документация](#техническая-документация)
+
+## Описание проекта
 
 Интернет-магазин для разработчиков, где можно купить различные товары для программистов. Проект включает каталог товаров, корзину и оформление заказа.
 
