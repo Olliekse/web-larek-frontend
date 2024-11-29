@@ -34,7 +34,8 @@
 - [Setup and Installation](#setup-and-installation)
 - [Technical Reference](#technical-reference)
 
-![UML](https://github.com/user-attachments/assets/2213cf33-47f1-427e-a4c9-887dba1fa891)
+![RLHVJnml57tdKn1_3p-DMPE-zC4qZUkgwIRQRgff7zgcGRZP8GumWOjsQ_tklS1sOSQT5uPpW7Fk7pWBA3n6qxFmeEqWl31SzY84_imuVUT2FgozYrOjNEyy_zffXCpClNTF1VplRVxA1kSL-37-mjX0vuWry8CRfw3drs83_c2hKVJcmt2B0Y63vPlzX4Um64xvyZB_DCpWdOeoSwlo--r7GqlXaQW53GsQlH7yAOqx_5WeTUVIqiEZ2](https://github.com/user-attachments/assets/4143f2e6-299c-449b-8ab2-9c35a9c705b5)
+
 
 ---
 
