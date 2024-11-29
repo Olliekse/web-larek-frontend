@@ -3,447 +3,534 @@
 [Russian](#описание-проекта) | [English](#project-description)
 
 # Project Description
+
 An e-commerce website for developers where you can purchase various developer-oriented products. The project includes a product catalog, shopping cart, and checkout process.
-
-## Data Description
-
-### Data Interfaces
-
-#### Product
-
-```
-interface IProduct {
-id: string; // Product ID
-title: string; // Product name
-description: string; // Product description
-image: string; // Image URL
-category: string; // Category: "soft-skill" | "hard-skill" | "other" | "additional"
-price: number; // Price in synapses
-}
-```
-
-#### Cart
-
-```
-interface ICartItem extends IProduct {
-listNum: number; // Numeral position in cart
-}
-
-interface ICart {
-items: ICartItem[]; // Cart items
-total: number; // Total cost
-}
-```
-
-#### Order
-
-```
-interface IOrder {
-payment: 'online' | 'cash'; // Payment method
-email: string; // Customer email
-phone: string; // Customer phone
-address: string; // Delivery address
-total: number; // Order total
-items: string[]; // Array of product IDs
-}
-```
-
-
-## Data Models
-
-### AppState
-Central application state storage.
-- Stores:
-  - Product catalog
-  - Cart state
-  - Current order
-- Methods:
-  - `addToCart(item: IProduct): void`
-  - `removeFromCart(itemId: string): void`
-  - `setOrder(order: IOrder): void`
-  - `clearCart(): void`
-
-## View Components
-
-### Base Components
-
-#### View
-Base class for all display components.
-- Responsibilities:
-  - Render UI elements
-  - Handle basic UI interactions
-  - Emit UI-related events
-
-```
-interface IView {
-render(): void; // Render component
-destroy(): void; // Clear markup
-}
-```
-
-#### Modal
-Base class for modal windows.
-
-```
-interface IModal {
-open(): void; // Open modal window
-close(): void; // Close modal window
-}
-```
-
-
-### Application Components
-
-#### ProductCard
-Product card in catalog.
-- Displays:
-  - Product image
-  - Title
-  - Price
-- Events:
-  - Click opens detailed view
-
-#### Cart
-Shopping cart modal window.
-- Displays:
-  - List of selected products
-  - Total cost
-  - Checkout button
-- Events:
-  - Remove product
-  - Proceed to checkout
-
-#### OrderForm
-Two-step checkout form.
-- Step 1:
-  - Payment method selection
-  - Address input
-- Step 2:
-  - Email input
-  - Phone input
 
 ## Architecture Overview
 
-This project follows the Model-View-Presenter (MVP) architecture pattern:
+This project follows the Model-View-Presenter (MVP) pattern with an event-driven architecture:
 
-- **Model**: Represented by `AppState`, handles data and business logic.
-- **View**: Components like `ProductCard`, `Cart`, and `OrderForm` that render the UI.
-- **Presenter**: Manages the communication between Model and View, implemented in `index.ts`.
+- **Model Layer**: Manages application state through AppState class
+- **View Layer**: Handles UI components and user interactions
+- **Presenter Layer**: Coordinates between Model and View (implemented in index.ts)
 
-Here's a high-level diagram of the component relationships:
+Key architectural decisions:
+
+- Event-driven communication between layers
+- Single source of truth for application state
+- Reusable modal system for all popups
+
+## Architectural Layers (MVP)
+
+### Model Layer
+
+#### AppState Class
+
+Central application state manager responsible for:
+
+- Managing the product catalog, cart, and order data
+- Coordinating state changes across the application
+- Emitting events when application state changes
+- Maintaining data integrity and validation
+
+Key responsibilities:
+
+- Manages shopping cart operations (add/remove items)
+- Handles order processing and status
+- Provides access to current application state
+- Ensures data consistency across components
+
+### View Layer
+
+#### Base Classes
+
+##### View Class
+
+Core base class that:
+
+- Provides foundation for all UI components
+- Manages component lifecycle (render/destroy)
+- Handles basic DOM operations
+- Standardizes component initialization
+
+##### Modal Class
+
+Universal modal window system that:
+
+- Manages all popup dialogs in the application
+- Handles modal lifecycle (open/close)
+- Provides consistent overlay behavior
+- Supports dynamic content injection
+
+#### Application Components
+
+##### ProductCard Class
+
+Responsible for:
+
+- Displaying individual product information in the catalog
+- Handling "Add to Cart" user interactions
+- Emitting cart-related events when products are selected
+- Managing product card visual states (available/unavailable)
+
+Key interactions:
+
+- Responds to user clicks on "Add to Cart"
+- Emits `cart:add` events with product data
+- Updates visual state based on cart status
+
+##### Cart Class
+
+Shopping cart manager responsible for:
+
+- Displaying current cart contents and total
+- Managing item quantity updates
+- Handling item removal
+- Initiating checkout process
+
+Key interactions:
+
+- Updates display when cart state changes
+- Emits events for cart modifications
+- Manages cart total calculations
+- Provides checkout flow entry point
+
+##### OrderForm Class
+
+Checkout form handler responsible for:
+
+- Managing user input for order details
+- Validating form data
+- Handling payment method selection
+- Processing order submission
+
+Key interactions:
+
+- Validates user inputs in real-time
+- Emits events for form submission
+- Manages form state and error display
+- Coordinates with payment processing
+
+### Event System and Component Interaction
+
+The application uses an event-driven architecture to manage communication between components. Here's a concrete example of the interaction flow when adding an item to the cart:
+
+1. User clicks "Add to Cart" on a product card
+2. ProductCard component emits `cart:add` event with product data
+3. AppState processes the event and updates cart data
+4. AppState emits `cart:changed` event
+5. Cart component receives the event and updates its display
+
+Example flow diagram illustrating the interaction process:
 
 ```
-       +-------------+
-       |   AppState  |
-       | (Data Model)|
-       +-------------+
-              ^
-              |
-              v
-     +------------------+
-     |     Presenter    |
-     | (in index.ts)    |
-     +------------------+
-         ^          ^
-         |          |
-         v          v
-+-------------+ +-----------+
-|    View     | |   Modal   |
-| Components  | | Components|
-+-------------+ +-----------+
+User Action -> View -> Event -> Model -> Event -> View Update
+(Click Button) -> (ProductCard) -> (cart:add) -> (AppState) -> (cart:changed) -> (Cart)
 ```
 
-## Event System
+Main events used in the application:
 
-### EventEmitter
-Enables communication between components.
+- `cart:add` - add item to cart
+- `cart:remove` - remove item from cart
+- `cart:changed` - cart state updated
+- `order:submit` - submit order form
+- `modal:open` - open modal window
+- `modal:close` - close modal window
 
+### Presenter Layer
+
+The presenter logic is implemented in the main application script (`index.ts`). It:
+
+- Initializes all components
+- Sets up event listeners
+- Manages data flow between Model and View
+- Handles API communication
+
+## User Interaction Examples
+
+### Adding Item to Cart
+
+1. User clicks "Add to Cart" on ProductCard
+   - ProductCard component emits `cart:add` with product data
+2. Presenter receives event and calls AppState.addToCart()
+3. AppState updates cart data and emits `cart:changed`
+4. Presenter receives `cart:changed` and updates Cart view
+5. Cart component re-renders with new item
+
+### Checkout Process
+
+1. User opens cart and clicks "Checkout"
+   - Cart component emits `modal:open` with order form
+2. Presenter shows OrderForm in modal
+3. User completes form and submits
+   - OrderForm emits `order:submit` with form data
+4. Presenter validates and sends to AppState
+5. AppState updates order and emits `order:changed`
+
+## Development Approach
+
+### Implementation Order
+
+1. Data Models
+   - Define interfaces
+   - Implement AppState
+   - Add event emissions
+2. View Components
+   - Base View class
+   - Modal system
+   - Product components
+   - Cart and Order components
+3. Presenter Logic
+   - Event listeners
+   - API integration
+   - Component initialization
+
+### Testing Strategy
+
+- Unit tests for AppState
+- Integration tests for event flow
+- E2E tests for critical user paths
+
+## Setup and Installation
+
+### Installation Steps
+
+1. Clone repository:
+
+```bash
+git clone <https://github.com/Olliekse/web-larek-frontend>
 ```
-interface IEvents {
-on<T>(event: string, handler: (data: T) => void): void;
-emit<T>(event: string, data: T): void;
-off(event: string, handler: Function): void;
-}
+
+2. Install dependencies:
+
+```bash
+npm install
 ```
 
-### Application Events
+3. Start development server:
 
-```
-enum EventType {
-// Products
-ProductSelected = 'product:selected',
-AddToCart = 'cart:add',
-RemoveFromCart = 'cart:remove',
-// Cart
-CartOpen = 'cart:open',
-CartClose = 'cart:close',
-// Order
-OrderSubmit = 'order:submit',
-OrderSuccess = 'order:success',
-}
-```
-### Component Interaction Flow
-
-1. User interacts with a View component (e.g., clicks "Add to Cart").
-2. View emits an event (e.g., `AddToCart`).
-3. Presenter (in `index.ts`) listens for this event.
-4. Presenter updates the Model (`AppState`).
-5. Model emits a change event.
-6. Presenter listens for Model changes and updates relevant Views.
-
-Example flow:
-```
-User Click -> ProductCard -> AddToCart event -> Presenter -> AppState -> 
-Model Change event -> Presenter -> Update Cart View
+```bash
+npm run dev
 ```
 
-## API Integration
-Base URL: `https://larek-api.nomoreparties.co/api`
+4. Build for production:
 
-### API Methods
-1. Get product list
-   ```typescript
-   GET /products
-   Response: IProduct[]
-   ```
-
-2. Submit order
-   ```typescript
-   POST /order
-   Body: IOrder
-   Response: { id: string; total: number; }
-   ```
-
-## Installation and Launch
-1. Clone repository
-2. Install dependencies: `npm install`
-3. Start development server: `npm run dev`
-4. Build for production: `npm run build`
+```bash
+npm run build
+```
 
 ### Development Environment
-- This project uses Webpack for bundling. Configuration can be found in `webpack.config.js`.
-- TypeScript is used for type-checking. Configuration is in `tsconfig.json`.
-- Styling is done with SCSS, compiled to CSS during the build process.
 
-# Web-Larek Frontend
+- Project uses Webpack for bundling
+- TypeScript for type checking
+- SCSS for styling
 
-## Описание проекта
-Интернет-магазин для разработчиков, где можно купить различные товары для программистов. Проект включает каталог товаров, корзину и оформление заказа.
+## Technical Reference
 
-## Описание данных
+<details>
+<summary>View Technical Details</summary>
 
-### Интерфейсы данных
+### Class Constructors and Fields
 
-#### Товар
+#### AppState
 
-```
-interface IProduct {
-id: string; // ID товара
-title: string; // Название товара
-description: string; // Описание товара
-image: string; // Ссылка на изображение
-category: string; // Категория: "софт-скил" | "хард-скил" | "другое" | "дополнительное"
-price: number; // Цена в синапсах
-}
-```
+Constructor: `constructor(events: IEvents)`
 
+- Purpose: Initializes application state manager
+- Parameters:
+  - `events: IEvents` - Event emission system
 
-#### Корзина
+Fields:
 
-```
-interface ICartItem extends IProduct {
-listNum: number; // Номер позиции товара в корзине товара в корзине
-}
-
-interface ICart {
-items: ICartItem[]; // Товары в корзине
-total: number; // Общая стоимость
-}
-```
-
-
-#### Заказ
-
-```
-interface IOrder {
-payment: 'онлайн' | 'при получении'; // Способ оплаты
-email: string; // Email покупателя
-phone: string; // Телефон покупателя
-address: string; // Адрес доставки
-total: number; // Сумма заказа
-items: string[]; // Массив ID товаров
-}
-```
-
-
-## Модели данных
-
-### AppState
-Центральное хранилище состояния приложения.
-- Хранит:
-  - Каталог товаров
-  - Состояние корзины
-  - Текущий заказ
-- Методы:
-  - `addToCart(item: IProduct): void`
-  - `removeFromCart(itemId: string): void`
-  - `setOrder(order: IOrder): void`
-  - `clearCart(): void`
-
-## Компоненты представления
-
-### Базовые компоненты
+- `_events: IEvents` - Event system for state changes
+- `_products: IProduct[]` - Product catalog storage
+- `_cart: ICart` - Shopping cart state
+- `_order: IOrder` - Current order data
 
 #### View
-Базовый класс для всех компонентов отображения.
 
-```
-interface IView {
-render(): void; // Отрисовка компонента
-destroy(): void; // Очистка разметки
-}
-```
+Constructor: `constructor(container: HTMLElement)`
 
+- Purpose: Creates base view component
+- Parameters:
+  - `container: HTMLElement` - Root DOM element
+
+Fields:
+
+- `_container: HTMLElement` - Component's root element
+- `_template: HTMLTemplateElement` - Component's HTML template
 
 #### Modal
-Базовый класс для модальных окон.
 
-```
-interface IModal extends IView {
-open(): void; // Открытие модального окна
-close(): void; // Закрытие модального окна
-}
-```
+Constructor: `constructor(container: HTMLElement, events: IEvents)`
 
-### Компоненты приложения
+- Purpose: Creates modal window manager
+- Parameters:
+  - `container: HTMLElement` - Modal container
+  - `events: IEvents` - Event system
+
+Fields:
+
+- `_closeButton: HTMLElement` - Modal close button
+- `_content: HTMLElement` - Modal content container
 
 #### ProductCard
-Карточка товара в каталоге.
-- Отображает:
-  - Изображение товара
-  - Название
-  - Цену
-- События:
-  - Клик по карточке открывает детальное представление
 
-#### Cart
-Модальное окно корзины.
-- Отображает:
-  - Список выбранных товаров
-  - Общую стоимость
-  - Кнопку оформления заказа
-- События:
-  - Удаление товара
-  - Переход к оформлению
+Constructor: `constructor(container: HTMLElement, events: IEvents)`
 
-#### OrderForm
-Форма оформления заказа (два шага).
-- Шаг 1:
-  - Выбор способа оплаты
-  - Ввод адреса
-- Шаг 2:
-  - Ввод email
-  - Ввод телефона
+- Purpose: Creates product display card
+- Parameters:
+  - `container: HTMLElement` - Card container
+  - `events: IEvents` - Event system
+
+Fields:
+
+- `_data: IProduct` - Product information
+- `_button: HTMLButtonElement` - Add to cart button
+
+</details>
+
+</br>
+
+# Описание проекта
+
+Интернет-магазин для разработчиков, где можно купить различные товары для программистов. Проект включает каталог товаров, корзину и оформление заказа.
 
 ## Обзор архитектуры
 
-Этот проект следует архитектурному паттерну Model-View-Presenter (MVP):
+Проект построен на основе паттерна Model-View-Presenter (MVP) с событийно-ориентированной архитектурой:
 
-- **Модель**: Представлена классом `AppState`, обрабатывает данные и бизнес-логику.
-- **Представление**: Компоненты, такие как `ProductCard`, `Cart` и `OrderForm`, которые отображают пользовательский интерфейс.
-- **Презентер**: Управляет коммуникацией между Моделью и Представлением, реализован в `index.ts`.
+- **Слой Модели**: Управляет состоянием приложения через класс AppState
+- **Слой Представления**: Обрабатывает UI компоненты и взаимодействие с пользователем
+- **Слой Презентера**: Координирует взаимодействие между Моделью и Представлением (реализован в index.ts)
 
-Вот схема высокого уровня отношений между компонентами:
+Ключевые архитектурные решения:
+
+- Событийно-ориентированное взаимодействие между слоями
+- Единый источник истины для состояния приложения
+- Переиспользуемая система модальных окон для всех всплывающих окон
+
+## Архитектурные слои (MVP)
+
+### Слой Модели
+
+#### Класс AppState
+
+Центральный менеджер состояния приложения, отвечающий за:
+
+- Управление каталогом товаров, корзиной и данными заказов
+- Координацию изменений состояния во всем приложении
+- Генерацию событий при изменении состояния
+- Поддержание целостности и валидации данных
+
+Ключевые обязанности:
+
+- Управляет операциями корзины (добавление/удаление товаров)
+- Обрабатывает процесс и статус заказов
+- Предоставляет доступ к текущему состоянию приложения
+- Обеспечивает согласованность данных между компонентами
+
+### Слой Представления
+
+#### Базовые классы
+
+##### Класс View
+
+Базовый класс, который:
+
+- Предоставляет основу для всех UI компонентов
+- Управляет жизненным циклом компонентов (отрисовка/удаление)
+- Обрабатывает базовые операции с DOM
+- Стандартизирует инициализацию компонентов
+
+##### Класс Modal
+
+Универсальная система модальных окон, которая:
+
+- Управляет всеми диалоговыми окнами в приложении
+- Обрабатывает жизненный цикл модальных окон (открытие/закрытие)
+- Обеспечивает единообразное поведение оверлея
+- Поддерживает динамическую вставку контента
+
+#### Компоненты приложения
+
+##### Класс ProductCard
+
+Отвечает за:
+
+- Отображение информации о товаре в каталоге
+- Обработку взаимодействия с кнопкой "Добавить в корзину"
+- Генерацию событий, связанных с корзиной, при выборе товаров
+- Управление визуальным состоянием карточки (доступен/недоступен)
+
+Ключевые взаимодействия:
+
+- Реагирует на клики пользователя по кнопке "Добавить в корзину"
+- Генерирует события `cart:add` с данными товара
+- Обновляет визуальное состояние в зависимости от статуса корзины
+
+##### Класс Cart
+
+Менеджер корзины покупок, отвечающий за:
+
+- Отображение текущего содержимого корзины и общей суммы
+- Управление обновлением количества товаров
+- Обработку удаления товаров
+- Инициацию процесса оформления заказа
+
+Ключевые взаимодействия:
+
+- Обновляет отображение при изменении состояния корзины
+- Генерирует события для модификаций корзины
+- Управляет расчетами общей стоимости
+- Предоставляет точку входа в процесс оформления заказа
+
+##### Класс OrderForm
+
+Обработчик формы заказа, отвечающий за:
+
+- Управление пользовательским вводом данных заказа
+- Валидацию данных формы
+- Обработку выбора способа оплаты
+- Обработку отправки заказа
+
+Ключевые взаимодействия:
+
+- Выполняет валидацию пользовательского ввода в реальном времени
+- Генерирует события при отправке формы
+- Управляет состоянием формы и отображением ошибок
+- Координирует процесс обработки платежа
+
+### Система событий и взаимодействие компонентов
+
+Приложение использует событийно-ориентированную архитектуру для управления коммуникацией между компонентами. Вот конкретный пример потока взаимодействия при добавлении товара в корзину:
+
+1. Пользователь нажимает "Добавить в корзину" на карточке товара
+2. Компонент ProductCard генерирует событие `cart:add` с данными товара
+3. AppState обрабатывает событие и обновляет данные корзины
+4. AppState генерирует событие `cart:changed`
+5. Компонент Cart получает событие и обновляет отображение
+
+Пример блок-схемы, иллюстрирующей процесс взаимодействия:
 
 ```
-       +-------------+
-       |   AppState  |
-       | (Модель)    |
-       +-------------+
-              ^
-              |
-              v
-     +------------------+
-     |     Презентер    |
-     |   (в index.ts)   |
-     +------------------+
-         ^          ^
-         |          |
-         v          v
-+-------------+ +-----------+
-| Компоненты  | | Модальные |
-|Представления| | Окна      |
-+-------------+ +-----------+
+Действие пользователя -> Представление -> Событие -> Модель -> Событие -> Обновление представления
+(Клик по кнопке) -> (ProductCard) -> (cart:add) -> (AppState) -> (cart:changed) -> (Cart)
 ```
 
-## Система событий
+Основные события, используемые в приложении:
 
-### EventEmitter
-Обеспечивает коммуникацию между компонентами.
+- `cart:add` - добавление товара в корзину
+- `cart:remove` - удаление товара из корзины
+- `cart:changed` - обновление состояния корзины
+- `order:submit` - отправка формы заказа
+- `modal:open` - открытие модального окна
+- `modal:close` - закрытие модального окна
 
-```
-interface IEvents {
-on<T>(event: string, handler: (data: T) => void): void;
-emit<T>(event: string, data: T): void;
-off(event: string, handler: Function): void;
-}
-```
+### Слой Презентера
 
-### События приложения
+Логика презентера реализована в основном скрипте приложения (`index.ts`). Он:
 
-```
-enum EventType {
-// Товары
-ProductSelected = 'product:selected',
-AddToCart = 'cart:add',
-RemoveFromCart = 'cart:remove',
-// Корзина
-CartOpen = 'cart:open',
-CartClose = 'cart:close',
-// Заказ
-OrderSubmit = 'order:submit',
-OrderSuccess = 'order:success',
-}
-```
-### Поток взаимодействия компонентов
-
-1. Пользователь взаимодействует с компонентом Представления (например, нажимает "Добавить в корзину").
-2. Представление генерирует событие (например, `AddToCart`).
-3. Презентер (в `index.ts`) слушает это событие.
-4. Презентер обновляет Модель (`AppState`).
-5. Модель генерирует событие об изменении.
-6. Презентер слушает изменения Модели и обновляет соответствующие Представления.
-
-Пример потока:
-```
-Клик пользователя -> ProductCard -> событие AddToCart -> Презентер -> AppState -> 
-событие изменения Модели -> Презентер -> Обновление представления корзины
-```
-
-## API Интеграция
-Базовый URL: `https://larek-api.nomoreparties.co/api`
-
-### Методы API
-1. Получение списка товаров
-   ```typescript
-   GET /products
-   Response: IProduct[]
-   ```
-
-2. Оформление заказа
-   ```typescript
-   POST /order
-   Body: IOrder
-   Response: { id: string; total: number; }
-   ```
+- Инициализирует все компоненты
+- Устанавливает обработчики событий
+- Управляет потоком данных между Моделью и Представлением
+- Обрабатывает коммуникацию с API
 
 ## Установка и запуск
-1. Клонировать репозиторий
-2. Установить зависимости: `npm install`
-3. Запустить сервер разработки: `npm run dev`
-4. Собрать для продакшена: `npm run build`
+
+### Шаги установки
+
+1. Клонировать репозиторий:
+
+```bash
+git clone <https://github.com/Olliekse/web-larek-frontend>
+```
+
+2. Установить зависимости:
+
+```bash
+npm install
+```
+
+3. Запустить сервер разработки:
+
+```bash
+npm run dev
+```
+
+4. Создать сборку для продакшена:
+
+```bash
+npm run build
+```
 
 ### Среда разработки
-- Этот проект использует Webpack для сборки. Конфигурация находится в `webpack.config.js`.
-- TypeScript используется для проверки типов. Конфигурация в `tsconfig.json`.
-- Стили написаны на SCSS и компилируются в CSS во время сборки.
+
+- Проект использует Webpack для сборки
+- TypeScript для проверки типов
+- SCSS для стилизации
+
+## Техническая документация
+
+<details>
+<summary>Показать технические детали</summary>
+
+### Конструкторы и поля классов
+
+#### AppState
+
+Конструктор: `constructor(events: IEvents)`
+
+- Назначение: Инициализация менеджера состояния приложения
+- Параметры:
+  - `events: IEvents` - Система событий
+
+Поля:
+
+- `_events: IEvents` - Система событий для изменений состояния
+- `_products: IProduct[]` - Хранилище каталога продуктов
+- `_cart: ICart` - Состояние корзины
+- `_order: IOrder` - Данные текущего заказа
+
+#### View
+
+Конструктор: `constructor(container: HTMLElement)`
+
+- Назначение: Создание базового компонента представления
+- Параметры:
+  - `container: HTMLElement` - Корневой DOM элемент
+
+Поля:
+
+- `_container: HTMLElement` - Корневой элемент компонента
+- `_template: HTMLTemplateElement` - HTML шаблон компонента
+
+#### Modal
+
+Конструктор: `constructor(container: HTMLElement, events: IEvents)`
+
+- Назначение: Создание менеджера модальных окон
+- Параметры:
+  - `container: HTMLElement` - Контейнер модального окна
+  - `events: IEvents` - Система событий
+
+Поля:
+
+- `_closeButton: HTMLElement` - Кнопка закрытия окна
+- `_content: HTMLElement` - Контейнер содержимого окна
+
+#### ProductCard
+
+Конструктор: `constructor(container: HTMLElement, events: IEvents)`
+
+- Назначение: Создание карточки товара
+- Параметры:
+  - `container: HTMLElement` - Контейнер карточки
+  - `events: IEvents` - Система событий
+
+Поля:
+
+- `_data: IProduct` - Информация о товаре
+- `_button: HTMLButtonElement` - Кнопка добавления в корзину
+
+</details>
