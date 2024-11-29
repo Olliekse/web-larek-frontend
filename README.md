@@ -2,6 +2,8 @@
 
 [Russian](#описание-проекта) | [English](#project-description)
 
+![UML](https://github.com/user-attachments/assets/2213cf33-47f1-427e-a4c9-887dba1fa891)
+
 # Project Description
 
 An e-commerce website for developers where you can purchase various developer-oriented products. The project includes a product catalog, shopping cart, and checkout process.
@@ -289,8 +291,6 @@ Fields:
 - `_button: HTMLButtonElement` - Add to cart button
 
 </details>
-
-</br>
 
 # Описание проекта
 
