@@ -2,10 +2,6 @@
 
 [Russian](#описание-проекта) | [English](#project-description)
 
----
-
-## 🇷🇺 Russian Version
-
 ## Содержание
 
 - [Описание проекта](#описание-проекта)
@@ -39,6 +35,10 @@
 - [Technical Reference](#technical-reference)
 
 ![UML](https://github.com/user-attachments/assets/2213cf33-47f1-427e-a4c9-887dba1fa891)
+
+---
+
+## 🇷🇺 Russian Version
 
 # Описание проекта
 
