@@ -2,6 +2,22 @@
 
 [Russian](#описание-проекта) | [English](#project-description)
 
+## Table of Contents
+
+- [Project Description](#project-description)
+- [Architecture Overview](#architecture-overview)
+- [Architectural Layers (MVP)](#architectural-layers-mvp)
+  - [Model Layer](#model-layer)
+  - [View Layer](#view-layer)
+    - [Base Classes](#base-classes)
+    - [Application Components](#application-components)
+  - [Event System and Component Interaction](#event-system-and-component-interaction)
+  - [Presenter Layer](#presenter-layer)
+- [User Interaction Examples](#user-interaction-examples)
+- [Development Approach](#development-approach)
+- [Setup and Installation](#setup-and-installation)
+- [Technical Reference](#technical-reference)
+
 ![UML](https://github.com/user-attachments/assets/2213cf33-47f1-427e-a4c9-887dba1fa891)
 
 # Project Description
@@ -293,6 +309,22 @@ Fields:
 </details>
 
 # Описание проекта
+
+## Содержание
+
+- [Описание проекта](#описание-проекта)
+- [Обзор архитектуры](#обзор-архитектуры)
+- [Архитектурные слои (MVP)](#архитектурные-слои-mvp)
+  - [Слой модели](#слой-модели)
+  - [Слой представления](#слой-представления)
+    - [Базовые классы](#базовые-классы)
+    - [Компоненты приложения](#компоненты-приложения)
+  - [Система событий и взаимодействие компонентов](#система-событий-и-взаимодействие-компонентов)
+  - [Слой презентера](#слой-презентера)
+- [Примеры взаимодействия](#примеры-взаимодействия)
+- [Подход к разработке](#подход-к-разработке)
+- [Установка и запуск](#установка-и-запуск)
+- [Техническая документация](#техническая-документация)
 
 Интернет-магазин для разработчиков, где можно купить различные товары для программистов. Проект включает каталог товаров, корзину и оформление заказа.
 
