@@ -4,9 +4,9 @@
 
 ---
 
-## Russian Version 🇷🇺
+## Russian Version
 
-## Содержание
+### Содержание
 
 - [Описание проекта](#описание-проекта)
 - [Архитектура приложения](#архитектура-приложения)
@@ -21,13 +21,13 @@
 - [Установка и разработка](#установка-и-разработка)
 - [Технические детали](#технические-детали)
 
-## Описание проекта
+### Описание проекта
 
 Это учебный проект - магазин мерча для разработчиков. Здесь можно тратить "синапсы" (виртуальная валюта) на забавные айтемы для разработчиков. В процессе работы над ним я освоил TypeScript и архитектуру MVP, научился делать отзывчивую галерею, работать с корзиной и валидацией форм.
 
-## Архитектура приложения
+### Архитектура приложения
 
-### Почему MVP и события?
+#### Почему MVP и события?
 
 В этом проекте используется паттерн MVP (Model-View-Presenter) и событийно-ориентированный подход, потому что:
 
@@ -35,13 +35,10 @@
 - События помогают избежать сильной связанности кода
 - Легче добавлять новые функции
 
-### Базовые классы
-
-#### EventEmitter
-
-Базовый брокер событий, реализующий паттерн Observer:
+#### Базовые классы
 
 ```typescript
+// EventEmitter - Базовый брокер событий, реализующий паттерн Observer
 class EventEmitter {
 	private _events: Map<string, Array<Function>>;
 
@@ -49,13 +46,8 @@ class EventEmitter {
 	emit(event: string, data?: any): void;
 	off(event: string, callback: Function): void;
 }
-```
 
-#### Component<T>
-
-Абстрактный базовый класс для всех UI компонентов:
-
-```typescript
+// Component<T> - Абстрактный базовый класс для всех UI компонентов
 abstract class Component<T> {
 	protected _container: HTMLElement;
 	protected _template: HTMLTemplateElement;
@@ -69,11 +61,10 @@ abstract class Component<T> {
 }
 ```
 
-### Модели данных и состояние
-
-#### Данные товара
+#### Модели данных и состояние
 
 ```typescript
+// Данные товара
 interface IProduct {
 	id: string;
 	title: string;
@@ -82,21 +73,15 @@ interface IProduct {
 	price: number;
 	image: string;
 }
-```
 
-#### Состояние корзины
-
-```typescript
+// Состояние корзины
 interface ICartItem extends IProduct {
 	quantity: number;
 }
 
 type ICart = ICartItem[];
-```
 
-#### Данные заказа
-
-```typescript
+// Данные заказа
 interface IOrderForm {
 	email: string;
 	phone: string;
@@ -105,9 +90,9 @@ interface IOrderForm {
 }
 ```
 
-### Разделение слоев
+#### Разделение слоев
 
-#### Слой Model
+##### Слой Model
 
 - `AppState`: Управление состоянием приложения
   - Каталог продуктов
@@ -118,7 +103,7 @@ interface IOrderForm {
   - Обработка способа оплаты
   - Отправка заказа
 
-#### Слой View
+##### Слой View
 
 - `ProductCard`: Компоненты отображения товаров
   - Рендер элементов каталога
@@ -130,14 +115,14 @@ interface IOrderForm {
   - Отображение любого контента
   - Управление жизненным циклом
 
-#### Слой Presenter (index.ts)
+##### Слой Presenter (index.ts)
 
 - Связывает Model и View
 - Устанавливает слушатели событий
 - Обрабатывает бизнес-логику
 - Управляет потоком приложения
 
-### Пример взаимодействия: добавление товара в корзину
+#### Пример взаимодействия: добавление товара в корзину
 
 Рассмотрим полный цикл добавления товара в корзину:
 
@@ -202,7 +187,7 @@ class CartView extends Component<ICart> {
 }
 ```
 
-## Начальная инициализация
+### Начальная инициализация
 
 1. Инициализация базовых сервисов:
    - Создание EventEmitter для обработки событий
@@ -222,23 +207,23 @@ class CartView extends Component<ICart> {
    - Рендер главной страницы с товарами
    - Инициализация пустой корзины
 
-## Структура компонентов
+### Структура компонентов
 
 ```
-BaseView
+Component<T>
 ├── Modal (управление всеми попапами)
 ├── ProductCard
 │   ├── CatalogCard
 │   └── PreviewCard
-├── Cart
+├── CartView
 └── OrderForm
 ```
 
 Каждый компонент отвечает за конкретную функциональность и общается через события. Modal является универсальным компонентом для отображения любого контента в модальном окне.
 
-## Система событий
+### Система событий
 
-### Основные события
+#### Основные события
 
 - `cart:add` - добавление в корзину
 - `cart:remove` - удаление из корзины
@@ -247,21 +232,21 @@ BaseView
 - `modal:open` - открытие окна
 - `modal:close` - закрытие окна
 
-## Установка и разработка
+### Установка и разработка
 
-### Установка зависимостей
+#### Установка зависимостей
 
 ```bash
 npm install
 ```
 
-### Запуск для разработки
+#### Запуск для разработки
 
 ```bash
 npm run dev
 ```
 
-### Сборка проекта
+#### Сборка проекта
 
 ```bash
 npm run build
@@ -301,9 +286,9 @@ src/
 └── index.ts       # Точка входа
 ```
 
-## Технические детали
+### Технические детали
 
-### Стек технологий
+#### Стек технологий
 
 - TypeScript
 - HTML5 & CSS3
@@ -311,7 +296,7 @@ src/
 - ESLint
 - Prettier
 
-### API Интеграция
+#### API Интеграция
 
 Проект использует RESTful API для:
 
@@ -319,7 +304,7 @@ src/
 - Обработки заказов
 - Управления корзиной
 
-### Особенности реализации
+#### Особенности реализации
 
 - Строгая типизация данных через TypeScript
 - Событийно-ориентированная архитектура
@@ -329,9 +314,11 @@ src/
 
 ## [⬆️ К началу](#web-larek-frontend)
 
-## English Version 🇬🇧
+---
 
-## Table of Contents
+## English Version
+
+### Table of Contents
 
 - [Project Description](#project-description)
 - [Application Architecture](#application-architecture)
@@ -346,13 +333,13 @@ src/
 - [Installation and Development](#installation-and-development)
 - [Technical Details](#technical-details)
 
-## Project Description
+### Project Description
 
 This is an educational project - a merchandise store for developers. Users can spend "synapses" (virtual currency) on fun developer-themed items. Through this project, I learned TypeScript and MVP architecture, implemented a responsive gallery, and worked with shopping cart functionality and form validation.
 
-## Application Architecture
+### Application Architecture
 
-### Why MVP and Events?
+#### Why MVP and Events?
 
 This project uses the MVP (Model-View-Presenter) pattern and event-driven approach because:
 
@@ -360,13 +347,10 @@ This project uses the MVP (Model-View-Presenter) pattern and event-driven approa
 - Events help avoid tight code coupling
 - Easier to add new features
 
-### Base Classes
-
-#### EventEmitter
-
-Base event broker implementing the Observer pattern:
+#### Base Classes
 
 ```typescript
+// EventEmitter - Base event broker implementing Observer pattern
 class EventEmitter {
 	private _events: Map<string, Array<Function>>;
 
@@ -374,13 +358,8 @@ class EventEmitter {
 	emit(event: string, data?: any): void;
 	off(event: string, callback: Function): void;
 }
-```
 
-#### Component<T>
-
-Abstract base class for all UI components:
-
-```typescript
+// Component<T> - Abstract base class for all UI components
 abstract class Component<T> {
 	protected _container: HTMLElement;
 	protected _template: HTMLTemplateElement;
@@ -394,11 +373,10 @@ abstract class Component<T> {
 }
 ```
 
-### Data Models and State
-
-#### Product Data
+#### Data Models and State
 
 ```typescript
+// Product Data
 interface IProduct {
 	id: string;
 	title: string;
@@ -407,21 +385,15 @@ interface IProduct {
 	price: number;
 	image: string;
 }
-```
 
-#### Cart State
-
-```typescript
+// Cart State
 interface ICartItem extends IProduct {
 	quantity: number;
 }
 
 type ICart = ICartItem[];
-```
 
-#### Order Data
-
-```typescript
+// Order Data
 interface IOrderForm {
 	email: string;
 	phone: string;
@@ -430,9 +402,9 @@ interface IOrderForm {
 }
 ```
 
-### Layer Separation
+#### Layer Separation
 
-#### Model Layer
+##### Model Layer
 
 - `AppState`: Application state management
   - Product catalog
@@ -443,7 +415,7 @@ interface IOrderForm {
   - Payment method handling
   - Order submission
 
-#### View Layer
+##### View Layer
 
 - `ProductCard`: Product display components
   - Catalog item rendering
@@ -455,14 +427,14 @@ interface IOrderForm {
   - Any content display
   - Lifecycle management
 
-#### Presenter Layer (index.ts)
+##### Presenter Layer (index.ts)
 
 - Connects Model and View
 - Sets up event listeners
 - Handles business logic
 - Manages application flow
 
-### Interaction Example: Adding to Cart
+#### Interaction Example: Adding to Cart
 
 Let's look at the complete flow of adding an item to cart:
 
@@ -527,43 +499,43 @@ class CartView extends Component<ICart> {
 }
 ```
 
-## Initial Setup
+### Initial Setup
 
-1. Initialise base services:
+1. Initialize base services:
    - Create EventEmitter for event handling
    - Configure API service for backend communication
 2. Create model instances:
-   - Initialise AppState for managing catalog and cart
+   - Initialize AppState for managing catalog and cart
    - Create OrderModel for order processing
-3. Create UI components:
+3. Create view components:
    - Configure CatalogView for product gallery
-   - Initialise CartView for shopping cart
+   - Initialize CartView for shopping cart
    - Create modal window system
 4. Set up event listeners in index.ts:
-   - Connect model events to UI updates
-   - Configure user actions handlers
-5. Run the application:
-   - Load initial catalog of products from the server
-   - Render the main page with products
-   - Initialise an empty cart
+   - Connect model events to view updates
+   - Configure user action handlers
+5. Start application:
+   - Load initial product catalog from server
+   - Render main page with products
+   - Initialize empty cart
 
-## Component Structure
+### Component Structure
 
 ```
-BaseView
+Component<T>
 ├── Modal (manages all popups)
 ├── ProductCard
 │   ├── CatalogCard
 │   └── PreviewCard
-├── Cart
+├── CartView
 └── OrderForm
 ```
 
 Each component is responsible for a specific functionality and communicates through events. Modal is a universal component for displaying any content in a modal window.
 
-## Event System
+### Event System
 
-### Main Events
+#### Main Events
 
 - `cart:add` - adding to cart
 - `cart:remove` - removing from cart
@@ -572,21 +544,21 @@ Each component is responsible for a specific functionality and communicates thro
 - `modal:open` - opening a modal
 - `modal:close` - closing a modal
 
-## Installation and Development
+### Installation and Development
 
-### Installation
+#### Installation
 
 ```bash
 npm install
 ```
 
-### Development Run
+#### Development Run
 
 ```bash
 npm run dev
 ```
 
-### Build Project
+#### Build Project
 
 ```bash
 npm run build
@@ -626,9 +598,9 @@ src/
 └── index.ts       # Entry point
 ```
 
-## Technical Details
+### Technical Details
 
-### Technology Stack
+#### Technology Stack
 
 - TypeScript
 - HTML5 & CSS3
@@ -636,7 +608,7 @@ src/
 - ESLint
 - Prettier
 
-### API Integration
+#### API Integration
 
 The project uses RESTful API for:
 
@@ -644,7 +616,7 @@ The project uses RESTful API for:
 - Processing orders
 - Managing the cart
 
-### Implementation Features
+#### Implementation Features
 
 - Strict data typing through TypeScript
 - Event-driven architecture
