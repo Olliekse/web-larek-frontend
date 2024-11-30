@@ -2,8 +2,7 @@
 
 [Russian](#russian-version) | [English](#english-version)
 
-![UML dia](https://github.com/user-attachments/assets/9e34b2ac-db90-4129-8f1a-15dc25e4f120)
-
+![UML dia](https://github.com/user-attachments/assets/e686ec78-4c87-4c27-abcb-9a009784e1c6)
 
 ---
 
