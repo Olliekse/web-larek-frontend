@@ -40,13 +40,25 @@
 #### Базовые классы
 
 ```typescript
-// EventEmitter - Базовый брокер событий, реализующий паттерн Observer
-class EventEmitter {
-	private _events: Map<string, Array<Function>>;
+// EventEmitter - Базовый брокер событий с поддержкой RegExp и wildcards
+interface IEvents {
+	on<T extends object>(event: EventName, callback: (data: T) => void): void;
+	emit<T extends object>(event: string, data?: T): void;
+	trigger<T extends object>(
+		event: string,
+		context?: Partial<T>
+	): (data: T) => void;
+}
 
-	on(event: string, callback: Function): void;
-	emit(event: string, data?: any): void;
-	off(event: string, callback: Function): void;
+class EventEmitter implements IEvents {
+	private _events: Map<EventName, Set<Subscriber>>;
+
+	on<T>(event: EventName, callback: (data: T) => void): void; // Подписка на событие
+	off(event: EventName, callback: Function): void; // Отписка от события
+	emit<T>(event: string, data?: T): void; // Инициировать событие
+	onAll(callback: (event: EmitterEvent) => void): void; // Слушать все события
+	offAll(): void; // Сбросить все обработчики
+	trigger<T>(event: string, context?: Partial<T>): Function; // Создать триггер события
 }
 
 // Component<T> - Абстрактный базовый класс для всех UI компонентов
@@ -62,6 +74,13 @@ abstract class Component<T> {
 	abstract render(data?: T): void;
 }
 ```
+
+Особенности реализации EventEmitter:
+
+- Поддержка подписки на события через строки и RegExp
+- Возможность подписаться на все события через `onAll`
+- Метод `trigger` для создания функций-генераторов событий
+- Автоматическая очистка неиспользуемых обработчиков
 
 #### Модели данных и состояние
 
@@ -300,11 +319,25 @@ src/
 
 #### API Интеграция
 
-Проект использует RESTful API для:
+Проект использует класс Api для работы с REST API:
 
-- Получения каталога товаров
-- Обработки заказов
-- Управления корзиной
+```typescript
+class Api {
+	constructor(baseUrl: string, options?: RequestInit);
+	get(uri: string): Promise<object>;
+	post(
+		uri: string,
+		data: object,
+		method: 'POST' | 'PUT' | 'DELETE'
+	): Promise<object>;
+}
+```
+
+Автоматически обрабатывает:
+
+- JSON преобразование
+- Ошибки HTTP
+- Заголовки запросов
 
 #### Особенности реализации
 
@@ -352,13 +385,25 @@ This project uses the MVP (Model-View-Presenter) pattern and event-driven approa
 #### Base Classes
 
 ```typescript
-// EventEmitter - Base event broker implementing Observer pattern
-class EventEmitter {
-	private _events: Map<string, Array<Function>>;
+// EventEmitter - Base event broker with RegExp and wildcards support
+interface IEvents {
+	on<T extends object>(event: EventName, callback: (data: T) => void): void;
+	emit<T extends object>(event: string, data?: T): void;
+	trigger<T extends object>(
+		event: string,
+		context?: Partial<T>
+	): (data: T) => void;
+}
 
-	on(event: string, callback: Function): void;
-	emit(event: string, data?: any): void;
-	off(event: string, callback: Function): void;
+class EventEmitter implements IEvents {
+	private _events: Map<EventName, Set<Subscriber>>;
+
+	on<T>(event: EventName, callback: (data: T) => void): void; // Subscribe to event
+	off(event: EventName, callback: Function): void; // Unsubscribe from event
+	emit<T>(event: string, data?: T): void; // Trigger event
+	onAll(callback: (event: EmitterEvent) => void): void; // Listen to all events
+	offAll(): void; // Reset all handlers
+	trigger<T>(event: string, context?: Partial<T>): Function; // Create event trigger
 }
 
 // Component<T> - Abstract base class for all UI components
@@ -374,6 +419,13 @@ abstract class Component<T> {
 	abstract render(data?: T): void;
 }
 ```
+
+EventEmitter implementation features:
+
+- Support for string and RegExp event subscriptions
+- Ability to subscribe to all events via `onAll`
+- `trigger` method for creating event generator functions
+- Automatic cleanup of unused handlers
 
 #### Data Models and State
 
@@ -612,11 +664,25 @@ src/
 
 #### API Integration
 
-The project uses RESTful API for:
+The project uses Api class for REST API interactions:
 
-- Retrieving product catalog
-- Processing orders
-- Managing the cart
+```typescript
+class Api {
+	constructor(baseUrl: string, options?: RequestInit);
+	get(uri: string): Promise<object>;
+	post(
+		uri: string,
+		data: object,
+		method: 'POST' | 'PUT' | 'DELETE'
+	): Promise<object>;
+}
+```
+
+Automatically handles:
+
+- JSON conversion
+- HTTP errors
+- Request headers
 
 #### Implementation Features
 
