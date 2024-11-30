@@ -2,6 +2,9 @@
 
 [Russian](#описание-проекта) | [English](#project-description)
 
+![UML 3](https://github.com/user-attachments/assets/34986e65-3482-4722-906c-c9a7d8901240)
+
+
 -------------------
 🇷🇺 Russian Version
 -------------------
