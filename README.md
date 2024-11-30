@@ -145,7 +145,7 @@ interface IOrderForm {
 
 #### Пример взаимодействия: добавление товара в корзину
 
-Рассмотрим полный цикл добавления товара в корзину:
+Ниже представлен полный процесс добавления товара в корзину:
 
 1. **Слой View (ProductCard)**
 
@@ -490,7 +490,7 @@ interface IOrderForm {
 
 #### Interaction Example: Adding to Cart
 
-Let's look at the complete flow of adding an item to cart:
+Here's a look at the complete flow of adding an item to cart:
 
 1. **View Layer (ProductCard)**
 
