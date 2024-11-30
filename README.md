@@ -555,15 +555,15 @@ class CartView extends Component<ICart> {
 
 ### Initial Setup
 
-1. Initialize base services:
+1. Initialise base services:
    - Create EventEmitter for event handling
    - Configure API service for backend communication
 2. Create model instances:
-   - Initialize AppState for managing catalog and cart
+   - Initialise AppState for managing catalog and cart
    - Create OrderModel for order processing
 3. Create view components:
    - Configure CatalogView for product gallery
-   - Initialize CartView for shopping cart
+   - Initialise CartView for shopping cart
    - Create modal window system
 4. Set up event listeners in index.ts:
    - Connect model events to view updates
@@ -571,7 +571,7 @@ class CartView extends Component<ICart> {
 5. Start application:
    - Load initial product catalog from server
    - Render main page with products
-   - Initialize empty cart
+   - Initialise empty cart
 
 ### Component Structure
 
