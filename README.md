@@ -2,7 +2,8 @@
 
 [Russian](#russian-version) | [English](#english-version)
 
-![ZLHDRnCn4Btlhx3AWLIG_e2eAYsb4PLQKQc12qBLn3jDhNh7AtisLO3-T_pXjJOMADpiUM_VpBmPxxbZi3nqkd7FYdgmq8aUv3Diy9vt6eL5oK0RZHE2LeIywr4Ooq-cQV87ukZMjAYFnAz62Ad1EN6rHUAhJZ6ZZM4XvWyOWcuXRg4_TMmLRTwBvK2IbQ7lFyuYwvsXMUGjn4YHeFNQPreKyd6YejUloIqmV5W8e5qccSV7_nDyRKhr5](https://github.com/user-attachments/assets/24e5fa17-dbaf-438b-9eba-03fea225ee49)
+![UML dia](https://github.com/user-attachments/assets/9e34b2ac-db90-4129-8f1a-15dc25e4f120)
+
 
 ---
 
