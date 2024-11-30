@@ -4,88 +4,237 @@
 
 ---
 
-## 🇷🇺 Russian Version
+## Russian Version 🇷🇺
 
 ## Содержание
 
 - [Описание проекта](#описание-проекта)
 - [Архитектура приложения](#архитектура-приложения)
-- [Возможности и реализация](#возможности-и-реализация)
-- [Компоненты](#компоненты)
+  - [Почему MVP и события?](#почему-mvp-и-события)
+  - [Базовые классы](#базовые-классы)
+  - [Модели данных и состояние](#модели-данных-и-состояние)
+  - [Разделение слоев](#разделение-слоев)
+  - [Примеры взаимодействия](#пример-взаимодействия-добавление-товара-в-корзину)
+- [Начальная инициализация](#начальная-инициализация)
+- [Структура компонентов](#структура-компонентов)
 - [Система событий](#система-событий)
 - [Установка и разработка](#установка-и-разработка)
 - [Технические детали](#технические-детали)
 
 ## Описание проекта
 
-Это мой учебный проект - магазин мерча для разработчиков. Здесь можно тратить "синапсы" (виртуальная валюта) на забавные айтемы для разработчиков. В процессе работы над ним я освоил TypeScript и архитектуру MVP, научился делать отзывчивую галерею, работать с корзиной и валидацией форм.
+Это учебный проект - магазин мерча для разработчиков. Здесь можно тратить "синапсы" (виртуальная валюта) на забавные айтемы для разработчиков. В процессе работы над ним я освоил TypeScript и архитектуру MVP, научился делать отзывчивую галерею, работать с корзиной и валидацией форм.
 
 ## Архитектура приложения
 
 ### Почему MVP и события?
 
-В этом проекте я использую паттерн MVP (Model-View-Presenter) и событийно-ориентированный подход, потому что:
+В этом проекте используется паттерн MVP (Model-View-Presenter) и событийно-ориентированный подход, потому что:
 
 - Разделение ответственности упрощает отладку
 - События помогают избежать сильной связанности кода
-- Легче добавлять новые функции (например, новые виды карточек)
+- Легче добавлять новые функции
+
+### Базовые классы
+
+#### EventEmitter
+
+Базовый брокер событий, реализующий паттерн Observer:
+
+```typescript
+class EventEmitter {
+	private _events: Map<string, Array<Function>>;
+
+	on(event: string, callback: Function): void;
+	emit(event: string, data?: any): void;
+	off(event: string, callback: Function): void;
+}
+```
+
+#### Component<T>
+
+Абстрактный базовый класс для всех UI компонентов:
+
+```typescript
+abstract class Component<T> {
+	protected _container: HTMLElement;
+	protected _template: HTMLTemplateElement;
+
+	constructor(container: HTMLElement) {
+		this._container = container;
+		this._template = this.getTemplate();
+	}
+
+	abstract render(data?: T): void;
+}
+```
+
+### Модели данных и состояние
+
+#### Данные товара
+
+```typescript
+interface IProduct {
+	id: string;
+	title: string;
+	description: string;
+	category: string;
+	price: number;
+	image: string;
+}
+```
+
+#### Состояние корзины
+
+```typescript
+interface ICartItem extends IProduct {
+	quantity: number;
+}
+
+type ICart = ICartItem[];
+```
+
+#### Данные заказа
+
+```typescript
+interface IOrderForm {
+	email: string;
+	phone: string;
+	address: string;
+	payment: 'card' | 'cash';
+}
+```
+
+### Разделение слоев
+
+#### Слой Model
+
+- `AppState`: Управление состоянием приложения
+  - Каталог продуктов
+  - Операции корзины
+  - Состояние заказа
+- `OrderModel`: Обработка заказов
+  - Валидация форм
+  - Обработка способа оплаты
+  - Отправка заказа
+
+#### Слой View
+
+- `ProductCard`: Компоненты отображения товаров
+  - Рендер элементов каталога
+  - Обработка взаимодействий
+- `CartView`: Интерфейс корзины
+  - Отображение содержимого
+  - Обновление итогов
+- `Modal`: Система модальных окон
+  - Отображение любого контента
+  - Управление жизненным циклом
+
+#### Слой Presenter (index.ts)
+
+- Связывает Model и View
+- Устанавливает слушатели событий
+- Обрабатывает бизнес-логику
+- Управляет потоком приложения
 
 ### Пример взаимодействия: добавление товара в корзину
 
-1. **Действие пользователя → View**
+Рассмотрим полный цикл добавления товара в корзину:
 
-   - Пользователь нажимает "В корзину" на ProductCard
-   - ProductCard генерирует событие `cart:add` с данными товара
-   - `card.emit('cart:add', { id: productId })`
+1. **Слой View (ProductCard)**
 
-2. **Обработка в Presenter (index.ts)**
+```typescript:src/components/ProductCard.ts
+class ProductCard extends Component<IProduct> {
+    private _button: HTMLButtonElement;
 
-   - Презентер ловит событие
-   - Вызывает метод модели: `appState.addToCart(product)`
+    protected _handleClick() {
+        // View генерирует событие
+        this.events.emit('cart:add', {
+            id: this._data.id
+        });
+    }
+}
+```
 
-3. **Обновление в Model (AppState)**
+2. **Слой Presenter (index.ts)**
 
-   - AppState добавляет товар в массив `_cart`
-   - Генерирует событие `cart:changed`
-   - `this.events.emit('cart:changed', this._cart)`
+```typescript:src/index.ts
+// Presenter обрабатывает событие
+events.on('cart:add', (item: IProduct) => {
+    // Вызывает метод модели
+    appState.addToCart(item);
+});
+```
 
-4. **Обновление View**
-   - Презентер получает новые данные из модели
-   - Обновляет CartView: `cartView.render(appState.getCart())`
-   - Обновляет счетчик в шапке: `headerView.updateCounter()`
+3. **Слой Model (AppState)**
 
-### Другие примеры взаимодействий
+```typescript:src/models/AppState.ts
+class AppState {
+    private _cart: ICart = [];
 
-#### Открытие карточки товара
+    addToCart(item: IProduct): void {
+        this._cart.push(item);
+        // Model генерирует событие изменения
+        this.events.emit('cart:changed', this._cart);
+    }
+}
+```
 
-1. Клик по карточке → `card:select`
-2. Презентер получает данные товара
-3. Открывает модальное окно с детальной информацией
+4. **Слой Presenter (index.ts)**
 
-#### Оформление заказа
+```typescript:src/index.ts
+// Presenter обрабатывает событие модели
+events.on('cart:changed', (cart: ICart) => {
+    // Получает данные из модели и обновляет представления
+    cartView.render(cart);
+    headerView.updateCounter(cart.length);
+});
+```
 
-1. Клик по кнопке заказа → `order:submit`
-2. Валидация формы
-3. Отправка данных на сервер
-4. Очистка корзины при успехе
+5. **Слой View (CartView)**
 
-## Возможности и реализация
+```typescript:src/components/CartView.ts
+class CartView extends Component<ICart> {
+    render(cart: ICart): void {
+        // View обновляет UI новыми данными
+        this._container.innerHTML = this.renderCart(cart);
+    }
+}
+```
 
-### Основные функции
+## Начальная инициализация
 
-- Галерея товаров с категориями (софт-скилы, другое)
-- Корзина с подсчётом синапсов в реальном времени
-- Система модальных окон для деталей товара и форм
-- Двухэтапный процесс оформления заказа
+1. Инициализация базовых сервисов:
+   - Создание EventEmitter для обработки событий
+   - Настройка API сервиса для работы с бэкендом
+2. Создание экземпляров моделей:
+   - Инициализация AppState для управления каталогом и корзиной
+   - Создание OrderModel для обработки заказов
+3. Создание компонентов представления:
+   - Настройка CatalogView для галереи товаров
+   - Инициализация CartView для корзины
+   - Создание системы модальных окон
+4. Настройка слушателей событий в index.ts:
+   - Подключение событий модели к обновлениям представления
+   - Настройка обработчиков пользовательских действий
+5. Запуск приложения:
+   - Загрузка начального каталога товаров с сервера
+   - Рендер главной страницы с товарами
+   - Инициализация пустой корзины
 
-### Компоненты
+## Структура компонентов
 
-Самые интересные части для меня:
+```
+BaseView
+├── Modal (управление всеми попапами)
+├── ProductCard
+│   ├── CatalogCard
+│   └── PreviewCard
+├── Cart
+└── OrderForm
+```
 
-- `card-catalog`: Карточки товаров в галерее (с анимацией при наведении!)
-- `card-preview`: Модальное окно с деталями товара
-- `card-basket`: Корзина с возможностью удаления товаров
-- Формы заказа с валидацией (мой первый опыт с TypeScript и формами)
+Каждый компонент отвечает за конкретную функциональность и общается через события. Modal является универсальным компонентом для отображения любого контента в модальном окне.
 
 ## Система событий
 
@@ -100,298 +249,407 @@
 
 ## Установка и разработка
 
-### Установка проекта
-
-1. Клонируем репозиторий:
-
-```bash
-git clone https://github.com/Olliekse/web-larek-frontend
-```
-
-2. Устанавливаем зависимости:
+### Установка зависимостей
 
 ```bash
 npm install
 ```
 
-3. Запускаем проект:
+### Запуск для разработки
 
 ```bash
 npm run dev
 ```
 
-4. Собираем для продакшена:
+### Сборка проекта
 
 ```bash
 npm run build
 ```
 
-### Окружение разработки
+### Структура проекта
 
-Использовал современный стек:
-
-- Webpack (сборка)
-- TypeScript (типизация)
-- SCSS (стили)
+```
+src/
+├── common.blocks/   # SCSS блоки компонентов
+│   ├── basket.scss
+│   ├── button.scss
+│   ├── card.scss
+│   └── ...
+├── components/     # TypeScript компоненты
+│   ├── base/       # Базовые классы
+│   │   ├── api.ts
+│   │   ├── events.ts
+│   │   ├── modal.ts
+│   │   └── view.ts
+│   ├── basket.ts
+│   ├── card.ts
+│   └── ...
+├── images/        # Изображения и иконки
+├── pages/         # HTML страницы
+├── public/        # Статические файлы
+├── scss/          # Стили
+│   ├── mixins/    # SCSS миксины
+│   ├── _variables.scss
+│   └── styles.scss
+├── types/         # TypeScript интерфейсы
+├── utils/         # Вспомогательные функции
+├── vendor/        # Внешние зависимости
+│   ├── garamond/  # Шрифты
+│   ├── glyphter/
+│   └── ys-text/
+└── index.ts       # Точка входа
+```
 
 ## Технические детали
 
-<details>
-<summary>Подробная техническая информация</summary>
+### Стек технологий
 
-### Конструкторы и поля классов
+- TypeScript
+- HTML5 & CSS3
+- Webpack
+- ESLint
+- Prettier
 
-#### AppState
+### API Интеграция
 
-Конструктор: `constructor(events: IEvents)`
+Проект использует RESTful API для:
 
-- Назначение: Инициализация менеджера состояния приложения
-- Параметры:
-  - `events: IEvents` - Система событий
+- Получения каталога товаров
+- Обработки заказов
+- Управления корзиной
 
-Поля:
+### Особенности реализации
 
-- `_events: IEvents` - Система обработки событий
-- `_products: IProduct[]` - Хранилище каталога товаров
-- `_cart: ICart` - Состояние корзины
-- `_order: IOrder` - Данные заказа
+- Строгая типизация данных через TypeScript
+- Событийно-ориентированная архитектура
+- Компонентный подход к UI
+- Валидация форм на клиентской стороне
+- Отзывчивый дизайн
 
-#### View
+## [⬆️ К началу](#web-larek-frontend)
 
-Конструктор: `constructor(container: HTMLElement)`
-
-- Назначение: Создание базового компонента представления
-- Параметры:
-  - `container: HTMLElement` - Корневой DOM элемент
-
-Поля:
-
-- `_container: HTMLElement` - Корневой элемент компонента
-- `_template: HTMLTemplateElement` - HTML шаблон компонента
-
-#### Modal
-
-Конструктор: `constructor(container: HTMLElement, events: IEvents)`
-
-- Назначение: Создание менеджера модальных окон
-- Параметры:
-  - `container: HTMLElement` - Контейнер модального окна
-  - `events: IEvents` - Система событий
-
-Поля:
-
-- `_closeButton: HTMLElement` - Кнопка закрытия окна
-- `_content: HTMLElement` - Контейнер содержимого окна
-
-#### ProductCard
-
-Конструктор: `constructor(container: HTMLElement, events: IEvents)`
-
-- Назначение: Создание карточки товара
-- Параметры:
-  - `container: HTMLElement` - Контейнер карточки
-  - `events: IEvents` - Система событий
-
-Поля:
-
-- `_data: IProduct` - Информация о товаре
-- `_button: HTMLButtonElement` - Кнопка добавления в корзину
-
-</details>
-
----
-
-## 🌐 English Version
+## English Version 🇬🇧
 
 ## Table of Contents
 
 - [Project Description](#project-description)
 - [Application Architecture](#application-architecture)
-- [Features & Implementation](#features--implementation)
-- [Components](#components)
+  - [Why MVP and Events?](#why-mvp-and-events)
+  - [Base Classes](#base-classes)
+  - [Data Models and State](#data-models-and-state)
+  - [Layer Separation](#layer-separation)
+  - [Interaction Examples](#interaction-example-adding-to-cart)
+- [Initial Setup](#initial-setup)
+- [Component Structure](#component-structure)
 - [Event System](#event-system)
-- [Setup & Development](#setup--development)
+- [Installation and Development](#installation-and-development)
 - [Technical Details](#technical-details)
 
 ## Project Description
 
-This is my learning project - a merch store for developers. Users can spend "synapses" (virtual currency) on fun dev-themed items. While building this, I learned TypeScript and MVP architecture, implemented a responsive gallery, and worked with cart functionality and form validation.
+This is an educational project - a merchandise store for developers. Users can spend "synapses" (virtual currency) on fun developer-themed items. Through this project, I learned TypeScript and MVP architecture, implemented a responsive gallery, and worked with shopping cart functionality and form validation.
 
 ## Application Architecture
 
 ### Why MVP and Events?
 
-In this project, I'm using the MVP (Model-View-Presenter) pattern and event-driven approach because:
+This project uses the MVP (Model-View-Presenter) pattern and event-driven approach because:
 
-- Separation of concerns makes debugging easier
-- Events help avoid tight coupling
-- It's easier to add new features (like new card types)
+- Separation of concerns simplifies debugging
+- Events help avoid tight code coupling
+- Easier to add new features
+
+### Base Classes
+
+#### EventEmitter
+
+Base event broker implementing the Observer pattern:
+
+```typescript
+class EventEmitter {
+	private _events: Map<string, Array<Function>>;
+
+	on(event: string, callback: Function): void;
+	emit(event: string, data?: any): void;
+	off(event: string, callback: Function): void;
+}
+```
+
+#### Component<T>
+
+Abstract base class for all UI components:
+
+```typescript
+abstract class Component<T> {
+	protected _container: HTMLElement;
+	protected _template: HTMLTemplateElement;
+
+	constructor(container: HTMLElement) {
+		this._container = container;
+		this._template = this.getTemplate();
+	}
+
+	abstract render(data?: T): void;
+}
+```
+
+### Data Models and State
+
+#### Product Data
+
+```typescript
+interface IProduct {
+	id: string;
+	title: string;
+	description: string;
+	category: string;
+	price: number;
+	image: string;
+}
+```
+
+#### Cart State
+
+```typescript
+interface ICartItem extends IProduct {
+	quantity: number;
+}
+
+type ICart = ICartItem[];
+```
+
+#### Order Data
+
+```typescript
+interface IOrderForm {
+	email: string;
+	phone: string;
+	address: string;
+	payment: 'card' | 'cash';
+}
+```
+
+### Layer Separation
+
+#### Model Layer
+
+- `AppState`: Application state management
+  - Product catalog
+  - Cart operations
+  - Order state
+- `OrderModel`: Order processing
+  - Form validation
+  - Payment method handling
+  - Order submission
+
+#### View Layer
+
+- `ProductCard`: Product display components
+  - Catalog item rendering
+  - Interaction handling
+- `CartView`: Shopping cart interface
+  - Content display
+  - Total updates
+- `Modal`: Modal window system
+  - Any content display
+  - Lifecycle management
+
+#### Presenter Layer (index.ts)
+
+- Connects Model and View
+- Sets up event listeners
+- Handles business logic
+- Manages application flow
 
 ### Interaction Example: Adding to Cart
 
-1. **User Action → View**
+Let's look at the complete flow of adding an item to cart:
 
-   - User clicks "Add to Cart" on ProductCard
-   - ProductCard generates `cart:add` event with product data
-   - `card.emit('cart:add', { id: productId })`
+1. **View Layer (ProductCard)**
 
-2. **Handling in Presenter (index.ts)**
+```typescript:src/components/ProductCard.ts
+class ProductCard extends Component<IProduct> {
+    private _button: HTMLButtonElement;
 
-   - Presenter catches the event
-   - Calls model method: `appState.addToCart(product)`
+    protected _handleClick() {
+        // View generates event
+        this.events.emit('cart:add', {
+            id: this._data.id
+        });
+    }
+}
+```
 
-3. **Update in Model (AppState)**
+2. **Presenter Layer (index.ts)**
 
-   - AppState adds product to `_cart` array
-   - Generates `cart:changed` event
-   - `this.events.emit('cart:changed', this._cart)`
+```typescript:src/index.ts
+// Presenter handles event
+events.on('cart:add', (item: IProduct) => {
+    // Calls model method
+    appState.addToCart(item);
+});
+```
 
-4. **View Update**
-   - Presenter gets new data from model
-   - Updates CartView: `cartView.render(appState.getCart())`
-   - Updates header counter: `headerView.updateCounter()`
+3. **Model Layer (AppState)**
 
-### Other Interaction Examples
+```typescript:src/models/AppState.ts
+class AppState {
+    private _cart: ICart = [];
 
-#### Opening Product Details
+    addToCart(item: IProduct): void {
+        this._cart.push(item);
+        // Model emits change event
+        this.events.emit('cart:changed', this._cart);
+    }
+}
+```
 
-1. Click on card → `card:select`
-2. Presenter fetches product data
-3. Opens modal with detailed information
+4. **Presenter Layer (index.ts)**
 
-#### Checkout Process
+```typescript:src/index.ts
+// Presenter handles model event
+events.on('cart:changed', (cart: ICart) => {
+    // Gets data from model and updates views
+    cartView.render(cart);
+    headerView.updateCounter(cart.length);
+});
+```
 
-1. Click checkout button → `order:submit`
-2. Form validation
-3. Send data to server
-4. Clear cart on success
+5. **View Layer (CartView)**
 
-## Features & Implementation
+```typescript:src/components/CartView.ts
+class CartView extends Component<ICart> {
+    render(cart: ICart): void {
+        // View updates UI with new data
+        this._container.innerHTML = this.renderCart(cart);
+    }
+}
+```
 
-### Core Features
+## Initial Setup
 
-- Product gallery with categories (soft-skills, other)
-- Real-time cart with synapse total
-- Modal system for product details and forms
-- Two-step checkout process
+1. Initialise base services:
+   - Create EventEmitter for event handling
+   - Configure API service for backend communication
+2. Create model instances:
+   - Initialise AppState for managing catalog and cart
+   - Create OrderModel for order processing
+3. Create UI components:
+   - Configure CatalogView for product gallery
+   - Initialise CartView for shopping cart
+   - Create modal window system
+4. Set up event listeners in index.ts:
+   - Connect model events to UI updates
+   - Configure user actions handlers
+5. Run the application:
+   - Load initial catalog of products from the server
+   - Render the main page with products
+   - Initialise an empty cart
 
-### Components
+## Component Structure
 
-The fun parts I built:
+```
+BaseView
+├── Modal (manages all popups)
+├── ProductCard
+│   ├── CatalogCard
+│   └── PreviewCard
+├── Cart
+└── OrderForm
+```
 
-- `card-catalog`: Product cards in the gallery (with hover animations!)
-- `card-preview`: Modal window for product details
-- `card-basket`: Cart with remove functionality
-- Order forms with validation (my first TypeScript forms experience)
+Each component is responsible for a specific functionality and communicates through events. Modal is a universal component for displaying any content in a modal window.
 
 ## Event System
 
-### Core Events
+### Main Events
 
-- `cart:add` - add to cart
-- `cart:remove` - remove from cart
-- `cart:changed` - cart updated
-- `order:submit` - submit order
-- `modal:open` - open window
-- `modal:close` - close window
+- `cart:add` - adding to cart
+- `cart:remove` - removing from cart
+- `cart:changed` - cart update
+- `order:submit` - order submission
+- `modal:open` - opening a modal
+- `modal:close` - closing a modal
 
-## Setup & Development
+## Installation and Development
 
-### Installation Steps
-
-1. Clone the repo:
-
-```bash
-git clone https://github.com/Olliekse/web-larek-frontend
-```
-
-2. Install dependencies:
+### Installation
 
 ```bash
 npm install
 ```
 
-3. Start development:
+### Development Run
 
 ```bash
 npm run dev
 ```
 
-4. Build for production:
+### Build Project
 
 ```bash
 npm run build
 ```
 
-### Development Environment
+### Project Structure
 
-Used modern tools:
-
-- Webpack for bundling
-- TypeScript for type safety
-- SCSS for styling
+```
+src/
+├── common.blocks/   # SCSS component blocks
+│   ├── basket.scss
+│   ├── button.scss
+│   ├── card.scss
+│   └── ...
+├── components/     # TypeScript components
+│   ├── base/       # Base classes
+│   │   ├── api.ts
+│   │   ├── events.ts
+│   │   ├── modal.ts
+│   │   └── view.ts
+│   ├── basket.ts
+│   ├── card.ts
+│   └── ...
+├── images/        # Images and icons
+├── pages/         # HTML pages
+├── public/        # Static files
+├── scss/          # Styles
+│   ├── mixins/    # SCSS mixins
+│   ├── _variables.scss
+│   └── styles.scss
+├── types/         # TypeScript interfaces
+├── utils/         # Helper functions
+├── vendor/        # External dependencies
+│   ├── garamond/  # Fonts
+│   ├── glyphter/
+│   └── ys-text/
+└── index.ts       # Entry point
+```
 
 ## Technical Details
 
-<details>
-<summary>View Technical Details</summary>
+### Technology Stack
 
-### Class Constructors and Fields
+- TypeScript
+- HTML5 & CSS3
+- Webpack
+- ESLint
+- Prettier
 
-#### AppState
+### API Integration
 
-Constructor: `constructor(events: IEvents)`
+The project uses RESTful API for:
 
-- Purpose: Initializes application state manager
-- Parameters:
-  - `events: IEvents` - Event emission system
+- Retrieving product catalog
+- Processing orders
+- Managing the cart
 
-Fields:
+### Implementation Features
 
-- `_events: IEvents` - Event system for state changes
-- `_products: IProduct[]` - Product catalog storage
-- `_cart: ICart` - Shopping cart state
-- `_order: IOrder` - Current order data
+- Strict data typing through TypeScript
+- Event-driven architecture
+- Component-based UI approach
+- Client-side form validation
+- Responsive design
 
-#### View
-
-Constructor: `constructor(container: HTMLElement)`
-
-- Purpose: Creates base view component
-- Parameters:
-  - `container: HTMLElement` - Root DOM element
-
-Fields:
-
-- `_container: HTMLElement` - Root element of component
-- `_template: HTMLTemplateElement` - HTML template for component
-
-#### Modal
-
-Constructor: `constructor(container: HTMLElement, events: IEvents)`
-
-- Purpose: Creates modal window manager
-- Parameters:
-  - `container: HTMLElement` - Modal container
-  - `events: IEvents` - Event system
-
-Fields:
-
-- `_closeButton: HTMLElement` - Close button
-- `_content: HTMLElement` - Content container
-
-#### ProductCard
-
-Constructor: `constructor(container: HTMLElement, events: IEvents)`
-
-- Purpose: Creates product card
-- Parameters:
-  - `container: HTMLElement` - Card container
-  - `events: IEvents` - Event system
-
-Fields:
-
-- `_data: IProduct` - Product information
-- `_button: HTMLButtonElement` - Add to cart button
-
-</details>
+[⬆️ Back to top](#web-larek-frontend)
