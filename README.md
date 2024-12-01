@@ -2,6 +2,8 @@
 
 [Russian](#russian-version) | [English](#english-version)
 
+![UML schematic](https://github.com/user-attachments/assets/62d6282c-526e-422f-85b5-50ff39202928)
+
 ---
 
 ## Russian Version
