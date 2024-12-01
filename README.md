@@ -1,6 +1,6 @@
 # Web-Larek Frontend
 
-[Russian](#russian-version) | [English](#english-version)
+[Russian](#russian-version) | [English](#english-version) 
 
 ---
 
@@ -590,7 +590,7 @@ I implemented component interaction through events because it provides:
 - Loose code coupling
 - Component independence
 - Easy functionality addition
-- Centralized state management
+- Centralised state management
 - Convenient logging and debugging
 
 #### Base Classes
@@ -920,7 +920,7 @@ interface IOrderForm {
 
 #### Application State Events
 
-- `app:ready` - Application initialized
+- `app:ready` - Application initialised
 - `app:error` - Application error
 - `app:loading` - Data loading
 - `modal:before-open` - Preparing to open modal window
