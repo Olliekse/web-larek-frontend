@@ -9,10 +9,14 @@
 ## Russian Version
 
 ### Содержание
+
+### Содержание
+
 - [Описание проекта](#описание-проекта)
 - [Архитектура приложения](#архитектура-приложения)
   - [Почему MVP и события?](#почему-mvp-и-события)
   - [Базовые классы](#базовые-классы)
+  - [Разделение слоев](#разделение-слоев)
   - [Компоненты приложения](#компоненты-приложения)
   - [Модели данных и состояние](#модели-данных-и-состояние)
 - [Система событий](#система-событий)
@@ -20,11 +24,18 @@
   - [События изменения данных](#события-изменения-данных)
   - [События состояния приложения](#события-состояния-приложения)
 - [Примеры взаимодействия компонентов](#примеры-взаимодействия-компонентов)
+  - [1. Пример взаимодействия: Добавление в корзину](#1-пример-взаимодействия-добавление-в-корзину)
+  - [2. Пример взаимодействия: Оформление заказа](#2-пример-взаимодействия-оформление-заказа)
+- [Структура компонентов](#структура-компонентов)
 - [Установка и разработка](#установка-и-разработка)
+  - [Установка](#установка)
+  - [Запуск для разработки](#запуск-для-разработки)
+  - [Сборка проекта](#сборка-проекта)
 - [Структура проекта](#структура-проекта)
 - [Технические детали](#технические-детали)
   - [Стек технологий](#стек-технологий)
   - [API Интеграция](#api-интеграция)
+  - [Особенности реализации](#особенности-реализации)
 
 ### Описание проекта
 
@@ -172,6 +183,38 @@ abstract class TemplatedComponent<T> extends Component<T> {
 	protected abstract getTemplate(): HTMLTemplateElement;
 }
 ```
+
+#### Разделение слоев
+
+##### Слой модели (Model)
+
+- `AppState`: Управление состоянием приложения
+  - Каталог товаров
+  - Операции с корзиной
+  - Состояние заказа
+- `OrderModel`: Обработка заказов
+  - Валидация форм
+  - Обработка способов оплаты
+  - Отправка заказа
+
+##### Слой представления (View)
+
+- `ProductCard`: Компоненты отображения товаров
+  - Отрисовка элементов каталога
+  - Обработка взаимодействий
+- `CartView`: Интерфейс корзины
+  - Отображение содержимого
+  - Обновление итогов
+- `Modal`: Система модальных окон
+  - Отображение любого контента
+  - Управление жизненным циклом
+
+##### Слой презентера (Presenter)
+
+- Связывает Model и View
+- Настраивает слушатели событий
+- Обрабатывает бизнес-логику
+- Управляет потоком приложения
 
 #### Компоненты приложения
 
@@ -379,7 +422,7 @@ interface IOrderForm {
 
 ### Система событий
 
-#### События пользовательского интерфейса
+#### События польз��вательского интерфейса
 
 - `card:click` - Клик по карточке товара
 - `card:select` - Выбор карточки товара для просмотра
@@ -417,58 +460,167 @@ interface IOrderForm {
 
 ### Примеры взаимодействия компонентов
 
-#### 1. Добавление товара в корзину
+#### 1. Пример взаимодействия: Добавление в корзину
+
+1. **Слой представления (ProductCard)**
 
 ```typescript
-// 1. Обработчик клика на кнопке товара
 class ProductCard extends Component<IProduct> {
-	protected handleClick(): void {
-		// Отправляем событие добавления в корзину
+	private _button: HTMLButtonElement;
+
+	protected _handleClick() {
+		// View генерирует событие
 		this.events.emit('cart:add', {
-			id: this.product.id,
+			id: this._data.id,
 		});
 	}
 }
+```
 
-// 2. Обновление корзины
-class CartView extends Component<ICart> {
-	protected handleCartUpdate(cart: ICart): void {
-		// Обновляем количество товаров
-		this.itemsCount.textContent = cart.items.length.toString();
-		// Обновляем сумму
-		this.totalPrice.textContent = cart.total.toString();
+2. **Слой презентера (index.ts)**
+
+```typescript
+// Presenter обрабатывает событие
+events.on('cart:add', (item: IProduct) => {
+	// Вызывает метод модели
+	appState.addToCart(item);
+});
+```
+
+3. **Слой модели (AppState)**
+
+```typescript
+class AppState {
+	private _cart: ICart = [];
+
+	addToCart(item: IProduct): void {
+		this._cart.push(item);
+		// Model генерирует событие изменения
+		this.events.emit('cart:changed', this._cart);
 	}
 }
 ```
 
-#### 2. Отправка формы заказа
+4. **Слой презентера (index.ts)**
 
 ```typescript
-// 1. Обработка отправки формы
+// Presenter обрабатывает событие модели
+events.on('cart:changed', (cart: ICart) => {
+	// Получает данные из модели и обновляет представления
+	cartView.render(cart);
+	headerView.updateCounter(cart.length);
+});
+```
+
+5. **Слой представления (CartView)**
+
+```typescript
+class CartView extends Component<ICart> {
+	render(cart: ICart): void {
+		// View обновляет UI новыми данными
+		this._container.innerHTML = this.renderCart(cart);
+	}
+}
+```
+
+#### 2. Пример взаимодействия: Оформление заказа
+
+1. **Слой представления (OrderForm)**
+
+```typescript
 class OrderForm extends Component<IOrderForm> {
-	protected handleSubmit(e: Event): void {
+	private _submitButton: HTMLButtonElement;
+
+	protected _handleSubmit(e: Event) {
 		e.preventDefault();
-
-		// Собираем данные формы
+		// View валидирует и генерирует событие
 		const formData = {
-			email: this.emailInput.value,
-			phone: this.phoneInput.value,
-			address: this.addressInput.value,
+			email: this._emailInput.value,
+			phone: this._phoneInput.value,
+			address: this._addressInput.value,
+			payment: this._paymentInput.value,
 		};
-
-		// Отправляем событие
 		this.events.emit('order:submit', formData);
 	}
 }
+```
 
-// 2. Показ сообщения об успехе
-class Modal extends Component<any> {
-	show(message: string): void {
-		this.container.textContent = message;
-		this.container.classList.add('modal_active');
+2. **Слой презентера (index.ts)**
+
+```typescript
+// Presenter обрабатывает событие
+events.on('order:submit', async (data: IOrderForm) => {
+	// Показывает состояние загрузки
+	appState.setLoading(true);
+	// Вызывает метод модели
+	await appState.submitOrder(data);
+});
+```
+
+3. **Слой модели (AppState)**
+
+```typescript
+class AppState {
+	private _currentOrder: IOrderForm | null = null;
+
+	async submitOrder(data: IOrderForm): Promise<void> {
+		try {
+			// Отправка в API
+			const response = await api.post('/order', {
+				...data,
+				items: this._cart,
+			});
+			// Очистка корзины и генерация событий
+			this._cart = [];
+			this.events.emit('order:completed', response);
+			this.events.emit('cart:changed', this._cart);
+		} catch (error) {
+			this.events.emit('order:error', error);
+		}
 	}
 }
 ```
+
+4. **Слой презентера (index.ts)**
+
+```typescript
+// Presenter обрабатывает успех/ошибку
+events.on('order:completed', (response) => {
+	appState.setLoading(false);
+	modalView.show('Заказ успешно оформлен!');
+});
+
+events.on('order:error', (error) => {
+	appState.setLoading(false);
+	modalView.show('Ошибка оформления: ' + error.message);
+});
+```
+
+5. **Слой представления (Modal)**
+
+```typescript
+class Modal extends Component<string> {
+	show(message: string): void {
+		// View обновляет UI результатом
+		this._container.textContent = message;
+		this._container.classList.add('modal_active');
+	}
+}
+```
+
+### Структура компонентов
+
+```
+Component<T>
+├── Modal (управление всеми попапами)
+├── ProductCard
+│ ├── CatalogCard
+│ └── PreviewCard
+├── CartView
+└── OrderForm
+```
+
+Каждый компонент отвечает за определенную функциональность и взаимодействует через события. Modal является универсальным компонентом для отображения любого контента в модальном окне.
 
 ### Установка и разработка
 
@@ -537,6 +689,8 @@ src/
 
 #### API Интеграция
 
+Проект использует класс Api для взаимодействия с REST API:
+
 ```typescript
 /**
  * Api - Класс для работы с REST API
@@ -578,6 +732,14 @@ class Api {
 - Заголовки запросов
 - Параметры запросов
 
+#### Особенности реализации
+
+- Строгая типизация через TypeScript
+- Событийно-ориентированная архитектура
+- Компонентный подход к UI
+- Клиентская валидация форм
+- Отзывчивый дизайн
+
 [⬆️ К началу](#web-larek-frontend)
 
 ---
@@ -585,10 +747,14 @@ class Api {
 ## English Version
 
 ### Table of Contents
+
+### Table of Contents
+
 - [Project Description](#project-description)
 - [Application Architecture](#application-architecture)
   - [Why MVP and Events?](#why-mvp-and-events)
   - [Base Classes](#base-classes)
+  - [Layer Separation](#layer-separation)
   - [Application Components](#application-components)
   - [Data Models and State](#data-models-and-state)
 - [Event System](#event-system)
@@ -596,11 +762,18 @@ class Api {
   - [Data Change Events](#data-change-events)
   - [Application State Events](#application-state-events)
 - [Component Interaction Examples](#component-interaction-examples)
+  - [1. Interaction Example: Adding to Cart](#1-interaction-example-adding-to-cart)
+  - [2. Interaction Example: Submitting Order](#2-interaction-example-submitting-order)
+- [Component Structure](#component-structure)
 - [Installation and Development](#installation-and-development)
+  - [Installation](#installation)
+  - [Development Run](#development-run)
+  - [Build Project](#build-project)
 - [Project Structure](#project-structure)
 - [Technical Details](#technical-details)
   - [Technology Stack](#technology-stack)
   - [API Integration](#api-integration)
+  - [Implementation Features](#implementation-features)
 
 ### Project Description
 
@@ -748,6 +921,38 @@ abstract class TemplatedComponent<T> extends Component<T> {
 	protected abstract getTemplate(): HTMLTemplateElement;
 }
 ```
+
+#### Layer Separation
+
+##### Model Layer
+
+- `AppState`: Application state management
+  - Product catalog
+  - Cart operations
+  - Order state
+- `OrderModel`: Order processing
+  - Form validation
+  - Payment method handling
+  - Order submission
+
+##### View Layer
+
+- `ProductCard`: Product display components
+  - Catalog item rendering
+  - Interaction handling
+- `CartView`: Shopping cart interface
+  - Content display
+  - Total updates
+- `Modal`: Modal window system
+  - Any content display
+  - Lifecycle management
+
+##### Presenter Layer (index.ts)
+
+- Connects Model and View
+- Sets up event listeners
+- Handles business logic
+- Manages application flow
 
 #### Application Components
 
@@ -993,58 +1198,171 @@ interface IOrderForm {
 
 ### Component Interaction Examples
 
-#### 1. Adding Product to Cart
+#### 1. Interaction Example: Adding to Cart
+
+Here's a look at the complete flow of adding an item to cart:
+
+1. **View Layer (ProductCard)**
 
 ```typescript
-// 1. Handler for product button click
 class ProductCard extends Component<IProduct> {
-	protected handleClick(): void {
-		// Send event to add item to cart
+	private _button: HTMLButtonElement;
+
+	protected _handleClick() {
+		// View generates event
 		this.events.emit('cart:add', {
-			id: this.product.id,
+			id: this._data.id,
 		});
 	}
 }
+```
 
-// 2. Cart update
-class CartView extends Component<ICart> {
-	protected handleCartUpdate(cart: ICart): void {
-		// Update number of items
-		this.itemsCount.textContent = cart.items.length.toString();
-		// Update total sum
-		this.totalPrice.textContent = cart.total.toString();
+2. **Presenter Layer (index.ts)**
+
+```typescript
+// Presenter handles event
+events.on('cart:add', (item: IProduct) => {
+	// Calls model method
+	appState.addToCart(item);
+});
+```
+
+3. **Model Layer (AppState)**
+
+```typescript
+class AppState {
+	private _cart: ICart = [];
+
+	addToCart(item: IProduct): void {
+		this._cart.push(item);
+		// Model emits change event
+		this.events.emit('cart:changed', this._cart);
 	}
 }
 ```
 
-#### 2. Submitting Order Form
+4. **Presenter Layer (index.ts)**
 
 ```typescript
-// 1. Form submission handling
+// Presenter handles model event
+events.on('cart:changed', (cart: ICart) => {
+	// Gets data from model and updates views
+	cartView.render(cart);
+	headerView.updateCounter(cart.length);
+});
+```
+
+5. **View Layer (CartView)**
+
+```typescript
+class CartView extends Component<ICart> {
+	render(cart: ICart): void {
+		// View updates UI with new data
+		this._container.innerHTML = this.renderCart(cart);
+	}
+}
+```
+
+#### 2. Interaction Example: Submitting Order
+
+Here's the complete flow of submitting an order:
+
+1. **View Layer (OrderForm)**
+
+```typescript
 class OrderForm extends Component<IOrderForm> {
-	protected handleSubmit(e: Event): void {
+	private _submitButton: HTMLButtonElement;
+
+	protected _handleSubmit(e: Event) {
 		e.preventDefault();
-
-		// Collect form data
+		// View validates and generates event
 		const formData = {
-			email: this.emailInput.value,
-			phone: this.phoneInput.value,
-			address: this.addressInput.value,
+			email: this._emailInput.value,
+			phone: this._phoneInput.value,
+			address: this._addressInput.value,
+			payment: this._paymentInput.value,
 		};
-
-		// Send event
 		this.events.emit('order:submit', formData);
 	}
 }
+```
 
-// 2. Show success message
-class Modal extends Component<any> {
-	show(message: string): void {
-		this.container.textContent = message;
-		this.container.classList.add('modal_active');
+2. **Presenter Layer (index.ts)**
+
+```typescript
+// Presenter handles event
+events.on('order:submit', async (data: IOrderForm) => {
+	// Shows loading state
+	appState.setLoading(true);
+	// Calls model method
+	await appState.submitOrder(data);
+});
+```
+
+3. **Model Layer (AppState)**
+
+```typescript
+class AppState {
+	private _currentOrder: IOrderForm | null = null;
+
+	async submitOrder(data: IOrderForm): Promise<void> {
+		try {
+			// Send to API
+			const response = await api.post('/order', {
+				...data,
+				items: this._cart,
+			});
+			// Clear cart and emit events
+			this._cart = [];
+			this.events.emit('order:completed', response);
+			this.events.emit('cart:changed', this._cart);
+		} catch (error) {
+			this.events.emit('order:error', error);
+		}
 	}
 }
 ```
+
+4. **Presenter Layer (index.ts)**
+
+```typescript
+// Presenter handles success/error
+events.on('order:completed', (response) => {
+	appState.setLoading(false);
+	modalView.show('Order successful!');
+});
+
+events.on('order:error', (error) => {
+	appState.setLoading(false);
+	modalView.show('Order failed: ' + error.message);
+});
+```
+
+5. **View Layer (Modal)**
+
+```typescript
+class Modal extends Component<string> {
+	show(message: string): void {
+		// View updates UI with result
+		this._container.textContent = message;
+		this._container.classList.add('modal_active');
+	}
+}
+```
+
+### Component Structure
+
+```
+Component<T>
+├── Modal (manages all popups)
+├── ProductCard
+│ ├── CatalogCard
+│ └── PreviewCard
+├── CartView
+└── OrderForm
+```
+
+Each component is responsible for specific functionality and communicates through events. Modal is a universal component for displaying any content in a modal window.
 
 ### Installation and Development
 
@@ -1113,6 +1431,8 @@ src/
 
 #### API Integration
 
+The project uses Api class for REST API interactions:
+
 ```typescript
 /**
  * Api - Class for working with REST API
@@ -1154,24 +1474,12 @@ Automatically handles:
 - Request headers
 - Request parameters
 
-#### Development Features
+#### Implementation Features
 
-- Component-based architecture
-- Event-driven state management
-- Strong typing with TypeScript
+- Strict typing through TypeScript
+- Event-driven architecture
+- Component-based UI approach
+- Client-side form validation
 - Responsive design
-- Form validation
-- Modal windows
-- API integration
-- Error handling
-
-#### Testing and Quality
-
-- ESLint configuration
-- Prettier code formatting
-- TypeScript strict mode
-- Event logging for debugging
-- Error boundary implementation
-- API error handling
 
 [⬆️ Back to Top](#web-larek-frontend)
