@@ -1,6 +1,6 @@
 # Web-Larek Frontend
 
-[Russian](#russian-version) | [English](#english-version) 
+[Russian](#russian-version) | [English](#english-version)
 
 ---
 
@@ -17,6 +17,7 @@
   - [Разделение слоев](#разделение-слоев)
   - [Примеры взаимодействия](#пример-взаимодействия-добавление-товара-в-корзину)
 - [Система событий](#система-событий)
+- [Примеры взаимодействия компонентов](#примеры-взаимодействия-компонентов)
 - [Установка и разработка](#установка-и-разработка)
 - [Структура проекта](#структура-проекта)
 - [Технические детали](#технические-детали)
@@ -410,6 +411,61 @@ interface IOrderForm {
 - `modal:before-close` - Подготовка к закрытию модального окна
 - `modal:after-close` - Модальное окно закрыто
 
+### Примеры взаимодействия компонентов
+
+#### 1. Добавление товара в корзину
+
+```typescript
+// 1. Обработчик клика на кнопке товара
+class ProductCard extends Component<IProduct> {
+	protected handleClick(): void {
+		// Отправляем событие добавления в корзину
+		this.events.emit('cart:add', {
+			id: this.product.id,
+		});
+	}
+}
+
+// 2. Обновление корзины
+class CartView extends Component<ICart> {
+	protected handleCartUpdate(cart: ICart): void {
+		// Обновляем количество товаров
+		this.itemsCount.textContent = cart.items.length.toString();
+		// Обновляем сумму
+		this.totalPrice.textContent = cart.total.toString();
+	}
+}
+```
+
+#### 2. Отправка формы заказа
+
+```typescript
+// 1. Обработка отправки формы
+class OrderForm extends Component<IOrderForm> {
+	protected handleSubmit(e: Event): void {
+		e.preventDefault();
+
+		// Собираем данные формы
+		const formData = {
+			email: this.emailInput.value,
+			phone: this.phoneInput.value,
+			address: this.addressInput.value,
+		};
+
+		// Отправляем событие
+		this.events.emit('order:submit', formData);
+	}
+}
+
+// 2. Показ сообщения об успехе
+class Modal extends Component<any> {
+	show(message: string): void {
+		this.container.textContent = message;
+		this.container.classList.add('modal_active');
+	}
+}
+```
+
 ### Установка и разработка
 
 #### Установка зависимостей
@@ -535,6 +591,7 @@ class Api {
   - [Layer Separation](#layer-separation)
   - [Interaction Examples](#interaction-example-adding-to-cart)
 - [Event System](#event-system)
+- [Component Interaction Examples](#component-interaction-examples)
 - [Installation and Development](#installation-and-development)
 - [Project Structure](#project-structure)
 - [Technical Details](#technical-details)
@@ -927,6 +984,61 @@ interface IOrderForm {
 - `modal:after-open` - Modal window opened
 - `modal:before-close` - Preparing to close modal window
 - `modal:after-close` - Modal window closed
+
+### Component Interaction Examples
+
+#### 1. Adding Product to Cart
+
+```typescript
+// 1. Handler for product button click
+class ProductCard extends Component<IProduct> {
+	protected handleClick(): void {
+		// Send event to add item to cart
+		this.events.emit('cart:add', {
+			id: this.product.id,
+		});
+	}
+}
+
+// 2. Cart update
+class CartView extends Component<ICart> {
+	protected handleCartUpdate(cart: ICart): void {
+		// Update number of items
+		this.itemsCount.textContent = cart.items.length.toString();
+		// Update total sum
+		this.totalPrice.textContent = cart.total.toString();
+	}
+}
+```
+
+#### 2. Submitting Order Form
+
+```typescript
+// 1. Form submission handling
+class OrderForm extends Component<IOrderForm> {
+	protected handleSubmit(e: Event): void {
+		e.preventDefault();
+
+		// Collect form data
+		const formData = {
+			email: this.emailInput.value,
+			phone: this.phoneInput.value,
+			address: this.addressInput.value,
+		};
+
+		// Send event
+		this.events.emit('order:submit', formData);
+	}
+}
+
+// 2. Show success message
+class Modal extends Component<any> {
+	show(message: string): void {
+		this.container.textContent = message;
+		this.container.classList.add('modal_active');
+	}
+}
+```
 
 ### Installation and Development
 
