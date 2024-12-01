@@ -9,20 +9,22 @@
 ## Russian Version
 
 ### Содержание
-
 - [Описание проекта](#описание-проекта)
 - [Архитектура приложения](#архитектура-приложения)
   - [Почему MVP и события?](#почему-mvp-и-события)
   - [Базовые классы](#базовые-классы)
   - [Компоненты приложения](#компоненты-приложения)
   - [Модели данных и состояние](#модели-данных-и-состояние)
-  - [Разделение слоев](#разделение-слоев)
-  - [Примеры взаимодействия](#пример-взаимодействия-добавление-товара-в-корзину)
 - [Система событий](#система-событий)
+  - [События пользовательского интерфейса](#события-пользовательского-интерфейса)
+  - [События изменения данных](#события-изменения-данных)
+  - [События состояния приложения](#события-состояния-приложения)
 - [Примеры взаимодействия компонентов](#примеры-взаимодействия-компонентов)
 - [Установка и разработка](#установка-и-разработка)
 - [Структура проекта](#структура-проекта)
 - [Технические детали](#технические-детали)
+  - [Стек технологий](#стек-технологий)
+  - [API Интеграция](#api-интеграция)
 
 ### Описание проекта
 
@@ -583,20 +585,22 @@ class Api {
 ## English Version
 
 ### Table of Contents
-
 - [Project Description](#project-description)
 - [Application Architecture](#application-architecture)
   - [Why MVP and Events?](#why-mvp-and-events)
   - [Base Classes](#base-classes)
   - [Application Components](#application-components)
   - [Data Models and State](#data-models-and-state)
-  - [Layer Separation](#layer-separation)
-  - [Interaction Examples](#interaction-example-adding-to-cart)
 - [Event System](#event-system)
+  - [User Interface Events](#user-interface-events)
+  - [Data Change Events](#data-change-events)
+  - [Application State Events](#application-state-events)
 - [Component Interaction Examples](#component-interaction-examples)
 - [Installation and Development](#installation-and-development)
 - [Project Structure](#project-structure)
 - [Technical Details](#technical-details)
+  - [Technology Stack](#technology-stack)
+  - [API Integration](#api-integration)
 
 ### Project Description
 
