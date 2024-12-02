@@ -145,11 +145,6 @@ export interface IFormState {
  * Represents the complete state of the application at any given moment.
  * Used by the Presenter to manage application-wide state changes.
  */
-/**
- * IAppState - Main application state interface
- * Represents the complete state of the application at any given moment.
- * Used by the Presenter to manage application-wide state changes.
- */
 export interface IAppState {
 	/** Current product catalog - updated after API fetch */
 	catalog: IProduct[];
