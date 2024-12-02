@@ -10,15 +10,19 @@
 
 ### Содержание
 
-### Содержание
-
 - [Описание проекта](#описание-проекта)
 - [Архитектура приложения](#архитектура-приложения)
   - [Почему MVP и события?](#почему-mvp-и-события)
+    - [Model-View-Presenter (MVP)](#model-view-presenter-mvp)
+    - [Событийно-ориентированный подход](#событийно-ориентированный-подход)
+  - [Разделение слоёв](#разделение-слоёв)
+    - [Слой модели (Model)](#слой-модели-model)
+    - [Слой представления (View)](#слой-представления-view)
+    - [Слой презентера (Presenter)](#слой-презентера-presenter)
+- [Компоненты приложения](#компоненты-приложения)
   - [Базовые классы](#базовые-классы)
-  - [Разделение слоев](#разделение-слоев)
-  - [Компоненты приложения](#компоненты-приложения)
-  - [Модели данных и состояние](#модели-данных-и-состояние)
+  - [Классы моделей](#классы-моделей)
+  - [Компоненты представления](#компоненты-представления)
 - [Система событий](#система-событий)
   - [События пользовательского интерфейса](#события-пользовательского-интерфейса)
   - [События изменения данных](#события-изменения-данных)
@@ -41,20 +45,20 @@
 
 Это мой учебный проект - магазин мерча для разработчиков. Здесь можно тратить "синапсы" (виртуальная валюта) на забавные айтемы для разработчиков. В процессе работы над ним я освоил TypeScript и архитектуру MVP, научился делать отзывчивую галерею, работать с корзиной и валидацией форм. Проект помог мне понять, как строить масштабируемые веб-приложения и работать с современными инструментами разработки.
 
-### Архитектура приложения
+## Архитектура приложения
 
-#### Почему MVP и события?
+### Почему MVP и события?
 
-В этом проекте я использовал паттерн MVP (Model-View-Presenter) и событийно-ориентированный подход. Давайте разберем, почему я выбрал именно эти подходы:
+В этом проекте используется паттерн MVP (Model-View-Presenter) и событийно-ориентированный подход. Вот почему:
 
-##### Model-View-Presenter (MVP)
+#### Model-View-Presenter (MVP)
 
 MVP разделяет приложение на три основных слоя:
 
 - **Model (Модель)**:
 
   - Отвечает за данные и бизнес-логику
-  - Управляет состоянием приложения (каталог, корзина, заказ)
+  - Управляет состоянием приложения
   - Выполняет валидацию данных
   - Взаимодействует с API
   - Генерирует события при изменении данных
@@ -81,9 +85,9 @@ MVP разделяет приложение на три основных сло�
 - Улучшенную тестируемость кода
 - Упрощенную поддержку и масштабирование
 
-##### Событийно-ориентированный подход
+#### Событийно-ориентированный подход
 
-Я реализовал взаимодействие между компонентами через события, потому что это дает:
+Взаимодействие между компонентами реализовано через события, потому что это обеспечивает:
 
 - Слабую связанность кода
 - Независимость компонентов друг от друга
@@ -91,7 +95,54 @@ MVP разделяет приложение на три основных сло�
 - Централизованное управление состоянием
 - Удобное логирование и отладку
 
-#### Базовые классы
+### Разделение слоёв
+
+#### Слой модели (Model)
+
+- **AppState**: Управление состоянием приложения
+
+  - Каталог товаров
+  - Операции с корзиной
+  - Состояние заказа
+
+- **OrderModel**: Обработка заказов
+  - Валидация форм
+  - Обработка способов оплаты
+  - Отправка заказа
+
+#### Слой представления (View)
+
+- **ProductCard**: Компоненты отображения товаров
+
+  - Отрисовка элементов каталога
+  - Обработка взаимодействий
+
+- **CartView**: Интерфейс корзины
+
+  - Отображение содержимого
+  - Обновление итогов
+
+- **Modal**: Система модальных окон
+  - Отображение любого контента
+  - Управление жизненным циклом
+
+#### Слой презентера (Presenter)
+
+- **Основные функции**:
+
+  - Связывание Model и View
+  - Настройка слушателей событий
+  - Обработка бизнес-логики
+  - Управление потоком приложения
+
+- **Обработка событий**:
+  - События пользовательского интерфейса
+  - События изменения данных
+  - События состояния приложения
+
+## Компоненты приложения
+
+### Базовые классы
 
 ```typescript
 /**
@@ -101,39 +152,49 @@ MVP разделяет приложение на три основных сло�
  * - Доставку событий подписчикам
  * - Поддержку RegExp и wildcards в именах событий
  */
-interface IEvents {
-	/** Подписка на событие
-	 * @param event - Имя события или RegExp для фильтрации событий
-	 * @param callback - Функция-обработчик события
-	 */
-	on<T extends object>(event: EventName, callback: (data: T) => void): void;
+class EventEmitter {
+    /** Хранилище обработчиков событий */
+    private _events: Map<EventName, Set<Callback>>;
+    /** Обработчики всех событий */
+    private _allEventHandlers: Set<Callback>;
 
-	/** Отписка от события
-	 * @param event - Имя события
-	 * @param callback - Функция-обработчик для удаления
-	 */
-	off(event: EventName, callback: Function): void;
+    /** 
+     * Подписка на событие
+     * @param event - Имя события или RegExp для фильтрации
+     * @param callback - Функция-обработчик события
+     */
+    on<T extends object>(event: EventName, callback: (data: T) => void): void;
 
-	/** Инициировать событие
-	 * @param event - Имя события
-	 * @param data - Данные события
-	 */
-	emit<T extends object>(event: string, data?: T): void;
+    /** 
+     * Отписка от события
+     * @param event - Имя события
+     * @param callback - Функция-обработчик для удаления
+     */
+    off(event: EventName, callback: Function): void;
 
-	/** Подписка на все события
-	 * @param callback - Функция-обработчик всех событий
-	 */
-	onAll(callback: (event: EmitterEvent) => void): void;
+    /** 
+     * Инициировать событие
+     * @param event - Имя события
+     * @param data - Данные события
+     */
+    emit<T extends object>(event: string, data?: T): void;
 
-	/** Сбросить все обработчики */
-	offAll(): void;
+    /** 
+     * Подписка на все события
+     * @param callback - Обработчик всех событий
+     */
+    onAll(callback: (event: EmitterEvent) => void): void;
 
-	/** Создать триггер события
-	 * @param event - Имя события
-	 * @param context - Контекст для данных события
-	 * @returns Функция-генератор события
-	 */
-	trigger<T extends object>(event: string, context?: Partial<T>): void;
+    /** Сбросить все обработчики */
+    offAll(): void;
+
+    /** 
+     * Создать триггер события
+     * @param event - Имя события
+     * @param context - Контекст для данных события
+     * @returns Функция-генератор события
+     */
+    trigger<T extends object>(event: string, context?: Partial<T>): void;
 }
 
 /**
@@ -141,125 +202,251 @@ interface IEvents {
  * Отвечает за:
  * - Базовую функциональность UI компонентов
  * - Управление DOM-элементом компонента
+ * - Обработку событий компонента
  */
 abstract class Component<T> {
-	/** Корневой DOM-элемент компонента */
-	protected container: HTMLElement;
+    /** 
+     * @param container - DOM элемент, в который будет вставлен компонент
+     */
+    protected constructor(protected readonly container: HTMLElement);
 
-	/**
-	 * @param container - DOM-элемент, в котором размещается компонент
-	 */
-	constructor(container: HTMLElement) {
-		this.container = container;
-	}
+    /** 
+     * Отрисовка компонента
+     * @param data - Данные для отрисовки
+     */
+    abstract render(data?: T): void;
 
-	/**
-	 * Отрисовка компонента
-	 * @param data - Данные для отрисовки
-	 */
-	abstract render(data?: T): void;
+    /** Очистка содержимого компонента */
+    protected clear(): void;
 }
 
 /**
  * TemplatedComponent<T> - Базовый класс для компонентов с шаблонами
  * Наследуется от Component<T>
- * Добавляет:
+ * Отвечает за:
  * - Поддержку HTML-шаблонов
  * - Методы работы с шаблонами
  */
 abstract class TemplatedComponent<T> extends Component<T> {
-	/** HTML-шаблон компонента */
-	protected template: HTMLTemplateElement;
+    /** HTML шаблон компонента */
+    protected readonly template: HTMLTemplateElement;
 
-	constructor(container: HTMLElement) {
-		super(container);
-		this.template = this.getTemplate();
-	}
+    /** 
+     * @param container - DOM элемент для компонента
+     * @param template - HTML шаблон компонента
+     */
+    protected constructor(container: HTMLElement, template: HTMLTemplateElement);
 
-	/**
-	 * Получение шаблона компонента
-	 * @returns HTML-шаблон
-	 */
-	protected abstract getTemplate(): HTMLTemplateElement;
+    /** 
+     * Клонирование шаблона
+     * @returns HTML элемент, созданный из шаблона
+     */
+    protected clone(): HTMLElement;
+}
+
+/**
+ * Api - Класс для работы с REST API
+ * Отвечает за:
+ * - HTTP запросы к серверу
+ * - Обработку ответов
+ * - Обработку ошибок
+ */
+class Api {
+    /** 
+     * @param baseUrl - Базовый URL API
+     * @param options - Опции запросов fetch
+     */
+    constructor(
+        private readonly baseUrl: string, 
+        private readonly options: RequestInit = {}
+    );
+
+    /** 
+     * GET-запрос
+     * @param uri - Путь запроса
+     * @returns Promise с данными
+     */
+    async get<T>(uri: string): Promise<T>;
+
+    /** 
+     * POST-запрос
+     * @param uri - Путь запроса
+     * @param data - Данные для отправки
+     * @returns Promise с ответом
+     */
+    async post<T>(uri: string, data: object): Promise<T>;
+
+    /** 
+     * Выполнение HTTP запроса
+     * @param uri - Путь запроса
+     * @param method - HTTP метод
+     * @param data - Данные для отправки
+     * @returns Promise с ответом
+     */
+    private async request<T>(uri: string, method: string, data?: object): Promise<T>;
+}
+
+/**
+ * Form - Базовый класс для работы с формами
+ * Отвечает за:
+ * - Сбор данных формы
+ * - Валидацию полей
+ * - Отправку данных
+ */
+class Form<T> extends Component<T> {
+    /** Ошибки валидации полей */
+    protected _errors: ValidationErrors = {};
+
+    /** 
+     * @param container - HTML форма
+     * @param validator - Экземпляр валидатора
+     */
+    constructor(
+        protected container: HTMLFormElement, 
+        protected validator: ValidationModel
+    );
+
+    /** 
+     * Установка обработчика отправки формы
+     * @param handler - Функция обработки отправки
+     */
+    protected onSubmit(handler: (data: T) => void): void;
+
+    /** 
+     * Валидация поля формы
+     * @param field - Поле для валидации
+     */
+    protected validateField(field: HTMLInputElement): void;
+
+    /** 
+     * Валидация всей формы
+     * @returns Признак валидности формы
+     */
+    protected validateForm(): boolean;
 }
 ```
 
-#### Разделение слоев
-
-##### Слой модели (Model)
-
-- `AppState`: Управление состоянием приложения
-  - Каталог товаров
-  - Операции с корзиной
-  - Состояние заказа
-- `OrderModel`: Обработка заказов
-  - Валидация форм
-  - Обработка способов оплаты
-  - Отправка заказа
-
-##### Слой представления (View)
-
-- `ProductCard`: Компоненты отображения товаров
-  - Отрисовка элементов каталога
-  - Обработка взаимодействий
-- `CartView`: Интерфейс корзины
-  - Отображение содержимого
-  - Обновление итогов
-- `Modal`: Система модальных окон
-  - Отображение любого контента
-  - Управление жизненным циклом
-
-##### Слой презентера (Presenter)
-
-- Связывает Model и View
-- Настраивает слушатели событий
-- Обрабатывает бизнес-логику
-- Управляет потоком приложения
-
-#### Компоненты приложения
-
-##### ProductCard extends TemplatedComponent<IProduct>
+### Классы моделей
 
 ```typescript
 /**
- * ProductCard - Компонент карточки товара
+ * AppState - Главный менеджер состояния приложения
  * Отвечает за:
- * - Отображение информации о товаре
- * - Обработку действий с товаром (добавление в корзину)
+ * - Управление каталогом товаров
+ * - Состояние корзины
+ * - Состояние заказа
+ * - Генерацию событий изменения состояния
  */
-class ProductCard extends TemplatedComponent<IProduct> {
-	private buttonElement: HTMLButtonElement;
-	private priceElement: HTMLElement;
-	private titleElement: HTMLElement;
-	private imageElement: HTMLImageElement;
+class AppState extends EventEmitter {
+    /** Каталог товаров */
+    private _catalog: IProduct[] = [];
+    /** Товары в корзине */
+    private _cart: ICart = [];
+    /** Состояние загрузки */
+    private _loading: boolean = false;
+    /** Текущий заказ */
+    private _order: IOrderForm | null = null;
 
-	constructor(container: HTMLElement, events: IEvents) {
-		super(container);
-		this.events = events;
-		// Инициализация элементов
-	}
+    /** 
+     * @param api - Экземпляр для работы с API
+     */
+    constructor(api: Api);
 
-	/**
-	 * Отрисовка карточки товара
-	 * @param product - Данные о товаре
-	 */
-	render(product: IProduct): void {
-		// Логика отрисовки
-	}
+    /** 
+     * Загрузка каталога товаров
+     * @returns Promise с массивом товаров
+     */
+    async loadCatalog(): Promise<IProduct[]>;
 
-	/**
-	 * Обработчик клика по кнопке
-	 * Генерирует событие cart:add
-	 */
-	private handleClick(): void {
-		this.events.emit('cart:add', { id: this.product.id });
-	}
+    /** 
+     * Добавление товара в корзину
+     * @param item - Товар для добавления
+     */
+    addToCart(item: IProduct): void;
+
+    /** 
+     * Удаление товара из корзины
+     * @param id - ID товара для удаления
+     */
+    removeFromCart(id: string): void;
+
+    /** 
+     * Получение содержимого корзины
+     * @returns Массив товаров в корзине
+     */
+    getCart(): ICart;
+}
+
+/**
+ * OrderModel - Обработка и валидация заказов
+ * Отвечает за:
+ * - Управление данными заказа
+ * - Валидацию форм
+ * - Отправку заказа
+ * - Обработку оплаты
+ */
+class OrderModel extends EventEmitter {
+    /** Данные заказа */
+    private _data: IOrderForm;
+    /** Ошибки валидации */
+    private _errors: ValidationErrors = {};
+
+    /** 
+     * @param api - Экземпляр класса для работы с API
+     */
+    constructor(api: Api);
+
+    /** 
+     * Валидация формы заказа
+     * @param form - Данные формы для проверки
+     * @returns Объект с ошибками валидации
+     */
+    validate(form: IOrderForm): ValidationErrors;
+
+    /** 
+     * Отправка заказа
+     * @param form - Данные формы заказа
+     * @returns Promise с ответом сервера
+     */
+    async submit(form: IOrderForm): Promise<IOrderResponse>;
 }
 ```
 
-##### CartView extends TemplatedComponent<ICart>
+### Компоненты представления
 
 ```typescript
+/**
+ * ProductCard - Базовый компонент карточки товара
+ * Отвечает за:
+ * - Отображение информации о товаре
+ * - Обработку действий с товаром
+ */
+class ProductCard extends TemplatedComponent<IProduct> {
+    /** Кнопка добавления в корзину */
+    protected _button: HTMLButtonElement;
+    /** Элемент с названием товара */
+    protected _title: HTMLElement;
+    /** Элемент с ценой */
+    protected _price: HTMLElement;
+    /** Элемент с изображением */
+    protected _image: HTMLImageElement;
+
+    /** 
+     * @param container - DOM элемент для карточки
+     * @param template - HTML шаблон карточки
+     */
+    constructor(container: HTMLElement, template: HTMLTemplateElement);
+
+    /** 
+     * Отрисовка карточки товара
+     * @param data - Данные о товаре
+     */
+    render(data: IProduct): void;
+
+    /** Обработчик клика по карточке */
+    protected handleClick(): void;
+}
+
 /**
  * CartView - Компонент корзины
  * Отвечает за:
@@ -268,155 +455,123 @@ class ProductCard extends TemplatedComponent<IProduct> {
  * - Отображение общей суммы
  */
 class CartView extends TemplatedComponent<ICart> {
-	private itemsContainer: HTMLElement;
-	private totalElement: HTMLElement;
-	private checkoutButton: HTMLButtonElement;
+    /** Список товаров */
+    protected _list: HTMLElement;
+    /** Элемент с общей суммой */
+    protected _total: HTMLElement;
+    /** Кнопка оформления заказа */
+    protected _button: HTMLButtonElement;
 
-	constructor(container: HTMLElement, events: IEvents) {
-		super(container);
-		this.events = events;
-		// Инициализация элементов
-	}
+    /** 
+     * @param container - DOM элемент для корзины
+     * @param template - HTML шаблон корзины
+     */
+    constructor(container: HTMLElement, template: HTMLTemplateElement);
 
-	/**
-	 * Отрисовка корзины
-	 * @param cart - Данные корзины
-	 */
-	render(cart: ICart): void {
-		// Логика отрисовки
-	}
+    /** 
+     * Отрисовка корзины
+     * @param cart - Массив товаров в корзине
+     */
+    render(cart: ICart): void;
 
-	/**
-	 * Обновление суммы
-	 * @param total - Общая сумма
-	 */
-	updateTotal(total: number): void {
-		// Обновление отображения суммы
-	}
+    /** 
+     * Обновление общей суммы
+     * @param total - Новая сумма
+     */
+    protected updateTotal(total: number): void;
 }
-```
 
-##### OrderForm extends TemplatedComponent<IOrderForm>
-
-```typescript
 /**
  * OrderForm - Компонент формы заказа
  * Отвечает за:
  * - Отображение формы заказа
- * - Валидацию введенных данных
- * - Отправку данных заказа
+ * - Валидацию полей
+ * - Отправку формы
  */
-class OrderForm extends TemplatedComponent<IOrderForm> {
-	private emailInput: HTMLInputElement;
-	private phoneInput: HTMLInputElement;
-	private addressInput: HTMLInputElement;
-	private paymentInputs: NodeListOf<HTMLInputElement>;
+class OrderForm extends Form<IOrderForm> {
+    /** Поле email */
+    protected _email: HTMLInputElement;
+    /** Поле телефона */
+    protected _phone: HTMLInputElement;
+    /** Поле адреса */
+    protected _address: HTMLInputElement;
+    /** Радио-кнопки способа оплаты */
+    protected _payment: NodeListOf<HTMLInputElement>;
 
-	constructor(container: HTMLElement, events: IEvents) {
-		super(container);
-		this.events = events;
-		// Инициализация элементов формы
-	}
+    /** 
+     * @param container - HTML форма заказа
+     * @param validator - Экземпляр валидатора
+     */
+    constructor(container: HTMLFormElement, validator: ValidationModel);
 
-	/**
-	 * Отрисовка формы
-	 * @param data - Начальные данные формы
-	 */
-	render(data?: IOrderForm): void {
-		// Логика отрисовки
-	}
+    /** 
+     * Отрисовка формы
+     * @param data - Начальные данные формы
+     */
+    render(data?: IOrderForm): void;
 
-	/**
-	 * Валидация формы
-	 * @returns Результат валидации
-	 */
-	validate(): IValidationResult {
-		// Логика валидации
-	}
+    /** Обработчик отправки формы */
+    protected handleSubmit(): void;
 }
-```
 
-##### Modal extends Component<any>
-
-```typescript
 /**
  * Modal - Компонент модального окна
  * Отвечает за:
  * - Отображение модальных окон
- * - Управление состоянием окна (открыто/закрыто)
- * - Обработку действий с окном
+ * - Управление состоянием окна
+ * - Обработку действий в окне
  */
-class Modal extends Component<any> {
-	private closeButton: HTMLElement;
-	private contentContainer: HTMLElement;
-	private isOpen: boolean = false;
+class Modal extends Component<HTMLElement> {
+    /** Кнопка закрытия */
+    protected _closeButton: HTMLElement;
+    /** Контейнер для контента */
+    protected _content: HTMLElement;
+    /** Флаг открытого состояния */
+    protected _isOpen: boolean = false;
 
-	constructor(container: HTMLElement, events: IEvents) {
-		super(container);
-		this.events = events;
-		// Инициализация элементов
-	}
+    /** 
+     * @param container - DOM элемент для модального окна
+     */
+    constructor(container: HTMLElement);
 
-	/**
-	 * Открытие модального окна
-	 * @param content - Содержимое окна
-	 */
-	open(content: HTMLElement): void {
-		// Логика открытия
-	}
+    /** 
+     * Отрисовка содержимого
+     * @param content - HTML элемент для отображения
+     */
+    render(content: HTMLElement): void;
 
-	/**
-	 * Закрытие модального окна
-	 */
-	close(): void {
-		// Логика закрытия
-	}
-}
-```
+    /** Открытие модального окна */
+    open(): void;
 
-#### Модели данных и состояние
+    /** Закрытие модального окна */
+    close(): void;
 
-```typescript
-/**
- * IProduct - Интерфейс товара
- * Описывает структуру данных товара в каталоге
- */
-interface IProduct {
-	id: string; // Уникальный идентификатор товара
-	title: string; // Название товара
-	description: string; // Описание товара
-	category: string; // Категория товара
-	price: number; // Цена товара
-	image: string; // URL изображения товара
+    /** Обработчик закрытия окна */
+    protected handleClose(): void;
 }
 
 /**
- * ICartItem - Интерфейс товара в корзине
- * Расширяет IProduct дополнительными полями для корзины
+ * HeaderView - Компонент заголовка
+ * Отвечает за:
+ * - Отображение счетчика корзины
+ * - Управление кнопкой корзины
  */
-interface ICartItem extends IProduct {
-	quantity: number; // Количество товара в корзине
-	position: number; // Позиция товара в корзине
-}
+class HeaderView extends Component<number> {
+    /** Счетчик товаров */
+    protected _counter: HTMLElement;
+    /** Кнопка корзины */
+    protected _button: HTMLButtonElement;
 
-/**
- * ICart - Интерфейс корзины
- * Описывает структуру данных корзины покупок
- */
-interface ICart {
-	items: ICartItem[]; // Массив товаров в корзине
-	total: number; // Общая сумма заказа
-}
+    /** 
+     * @param container - DOM элемент для заголовка
+     */
+    constructor(container: HTMLElement);
 
-/**
- * IOrderForm - Интерфейс формы заказа
- * Описывает структуру данных для оформления заказа
- */
-interface IOrderForm {
-	email: string; // Email покупателя
-	phone: string; // Телефон покупателя
-	address: string; // Адрес доставки
-	payment: 'card' | 'cash'; // Способ оплаты
+    /** 
+     * Отрисовка счетчика
+     * @param count - Количество товаров в корзине
+     */
+    render(count: number): void;
 }
 ```
 
@@ -748,27 +903,31 @@ class Api {
 
 ### Table of Contents
 
-### Table of Contents
-
 - [Project Description](#project-description)
 - [Application Architecture](#application-architecture)
   - [Why MVP and Events?](#why-mvp-and-events)
-  - [Base Classes](#base-classes)
+    - [Model-View-Presenter (MVP)](#model-view-presenter-mvp-1)
+    - [Event-Driven Approach](#event-driven-approach)
   - [Layer Separation](#layer-separation)
-  - [Application Components](#application-components)
-  - [Data Models and State](#data-models-and-state)
+    - [Model Layer](#model-layer)
+    - [View Layer](#view-layer)
+    - [Presenter Layer](#presenter-layer)
+- [Application Components](#application-components)
+  - [Base Classes](#base-classes)
+  - [Model Classes](#model-classes)
+  - [View Components](#view-components)
 - [Event System](#event-system)
   - [User Interface Events](#user-interface-events)
   - [Data Change Events](#data-change-events)
   - [Application State Events](#application-state-events)
 - [Component Interaction Examples](#component-interaction-examples)
   - [1. Interaction Example: Adding to Cart](#1-interaction-example-adding-to-cart)
-  - [2. Interaction Example: Submitting Order](#2-interaction-example-submitting-order)
+  - [2. Interaction Example: Order Checkout](#2-interaction-example-order-checkout)
 - [Component Structure](#component-structure)
 - [Installation and Development](#installation-and-development)
   - [Installation](#installation)
-  - [Development Run](#development-run)
-  - [Build Project](#build-project)
+  - [Development Launch](#development-launch)
+  - [Project Build](#project-build)
 - [Project Structure](#project-structure)
 - [Technical Details](#technical-details)
   - [Technology Stack](#technology-stack)
@@ -779,57 +938,96 @@ class Api {
 
 This is my learning project - a merchandise store for developers. Here you can spend "synapses" (virtual currency) on fun developer items. While working on it, I mastered TypeScript and MVP architecture, learned how to create a responsive gallery, work with shopping cart functionality and form validation. This project helped me understand how to build scalable web applications and work with modern development tools.
 
-### Application Architecture
+## Application Architecture
 
-#### Why MVP and Events?
+### Why MVP and Events?
 
-In this project, I used the MVP (Model-View-Presenter) pattern and event-driven approach. Let's examine why I chose these approaches:
+This project uses the MVP (Model-View-Presenter) pattern and an event-driven approach. Here's why:
 
-##### Model-View-Presenter (MVP)
+#### Model-View-Presenter (MVP)
 
 MVP divides the application into three main layers:
 
 - **Model**:
-
-  - Responsible for data and business logic
-  - Manages application state (catalog, cart, order)
+  - Handles data and business logic
+  - Manages application state
   - Performs data validation
-  - Interacts with API
+  - Interacts with the API
   - Generates events when data changes
-  - Independent of other layers
+  - Independent from other layers
 
 - **View**:
-
-  - Responsible for displaying data to user
-  - Handles user input
+  - Handles data display to users
+  - Processes user input
   - Generates events for user actions
   - Updates UI when receiving new data
   - Contains no business logic
 
 - **Presenter**:
   - Connects Model and View
-  - Handles events from both layers
+  - Processes events from both layers
   - Coordinates data and interface updates
   - Manages application business logic
-  - Located in main application file (index.ts)
+  - Located in the main application file (index.ts)
 
 This separation provides:
-
 - Clear separation of responsibilities
 - Improved code testability
 - Simplified maintenance and scaling
 
-##### Event-Driven Approach
+#### Event-Driven Approach
 
-I implemented component interaction through events because it provides:
-
+Component interaction is implemented through events because it provides:
 - Loose code coupling
 - Component independence
 - Easy functionality addition
-- Centralised state management
+- Centralized state management
 - Convenient logging and debugging
 
-#### Base Classes
+### Layer Separation
+
+#### Model Layer
+
+- **AppState**: Application state management
+  - Product catalog
+  - Cart operations
+  - Order state
+
+- **OrderModel**: Order processing
+  - Form validation
+  - Payment method handling
+  - Order submission
+
+#### View Layer
+
+- **ProductCard**: Product display components
+  - Catalog item rendering
+  - Interaction handling
+
+- **CartView**: Cart interface
+  - Content display
+  - Total updates
+
+- **Modal**: Modal window system
+  - Any content display
+  - Lifecycle management
+
+#### Presenter Layer
+
+- **Main Functions**:
+  - Model and View connection
+  - Event listener setup
+  - Business logic handling
+  - Application flow management
+
+- **Event Handling**:
+  - User interface events
+  - Data change events
+  - Application state events
+
+## Application Components
+
+### Base Classes
 
 ```typescript
 /**
@@ -839,39 +1037,44 @@ I implemented component interaction through events because it provides:
  * - Delivering events to subscribers
  * - Supporting RegExp and wildcards in event names
  */
-interface IEvents {
-	/** Subscribe to event
-	 * @param event - Event name or RegExp for event filtering
-	 * @param callback - Event handler function
-	 */
-	on<T extends object>(event: EventName, callback: (data: T) => void): void;
+class EventEmitter {
+    /** Event handler storage */
+    private _events: Map<EventName, Set<Callback>>;
+    /** All events handlers */
+    private _allEventHandlers: Set<Callback>;
 
-	/** Unsubscribe from event
-	 * @param event - Event name
-	 * @param callback - Handler function to remove
-	 */
-	off(event: EventName, callback: Function): void;
+    /** Subscribe to event
+     * @param event - Event name or RegExp for filtering
+     * @param callback - Event handler function
+     */
+    on<T extends object>(event: EventName, callback: (data: T) => void): void;
 
-	/** Emit event
-	 * @param event - Event name
-	 * @param data - Event data
-	 */
-	emit<T extends object>(event: string, data?: T): void;
+    /** Unsubscribe from event
+     * @param event - Event name
+     * @param callback - Handler function to remove
+     */
+    off(event: EventName, callback: Function): void;
 
-	/** Subscribe to all events
-	 * @param callback - Handler for all events
-	 */
-	onAll(callback: (event: EmitterEvent) => void): void;
+    /** Emit event
+     * @param event - Event name
+     * @param data - Event data
+     */
+    emit<T extends object>(event: string, data?: T): void;
 
-	/** Reset all handlers */
-	offAll(): void;
+    /** Subscribe to all events
+     * @param callback - Handler for all events
+     */
+    onAll(callback: (event: EmitterEvent) => void): void;
 
-	/** Create event trigger
-	 * @param event - Event name
-	 * @param context - Context for event data
-	 * @returns Event generator function
-	 */
-	trigger<T extends object>(event: string, context?: Partial<T>): void;
+    /** Reset all handlers */
+    offAll(): void;
+
+    /** Create event trigger
+     * @param event - Event name
+     * @param context - Context for event data
+     * @returns Event generator function
+     */
+    trigger<T extends object>(event: string, context?: Partial<T>): void;
 }
 
 /**
@@ -879,125 +1082,251 @@ interface IEvents {
  * Responsible for:
  * - Basic UI component functionality
  * - Managing component's DOM element
+ * - Handling component events
  */
 abstract class Component<T> {
-	/** Root DOM element of component */
-	protected container: HTMLElement;
+    /** 
+     * @param container - DOM element where component will be inserted
+     */
+    protected constructor(protected readonly container: HTMLElement);
 
-	/**
-	 * @param container - DOM element where component is placed
-	 */
-	constructor(container: HTMLElement) {
-		this.container = container;
-	}
+    /** 
+     * Render component
+     * @param data - Data for rendering
+     */
+    abstract render(data?: T): void;
 
-	/**
-	 * Render component
-	 * @param data - Data for rendering
-	 */
-	abstract render(data?: T): void;
+    /** Clear component contents */
+    protected clear(): void;
 }
 
 /**
  * TemplatedComponent<T> - Base class for components with templates
- * Inherits from Component<T>
- * Adds:
+ * Extends Component<T>
+ * Responsible for:
  * - HTML template support
  * - Template handling methods
  */
 abstract class TemplatedComponent<T> extends Component<T> {
-	/** Component's HTML template */
-	protected template: HTMLTemplateElement;
+    /** Component's HTML template */
+    protected readonly template: HTMLTemplateElement;
 
-	constructor(container: HTMLElement) {
-		super(container);
-		this.template = this.getTemplate();
-	}
+    /** 
+     * @param container - DOM element for component
+     * @param template - Component's HTML template
+     */
+    protected constructor(container: HTMLElement, template: HTMLTemplateElement);
 
-	/**
-	 * Get component template
-	 * @returns HTML template
-	 */
-	protected abstract getTemplate(): HTMLTemplateElement;
+    /** 
+     * Clone template
+     * @returns HTML element created from template
+     */
+    protected clone(): HTMLElement;
+}
+
+/**
+ * Api - Class for REST API interaction
+ * Responsible for:
+ * - HTTP server requests
+ * - Response handling
+ * - Error handling
+ */
+class Api {
+    /** 
+     * @param baseUrl - API base URL
+     * @param options - Fetch request options
+     */
+    constructor(
+        private readonly baseUrl: string, 
+        private readonly options: RequestInit = {}
+    );
+
+    /** 
+     * GET request
+     * @param uri - Request path
+     * @returns Promise with data
+     */
+    async get<T>(uri: string): Promise<T>;
+
+    /** 
+     * POST request
+     * @param uri - Request path
+     * @param data - Data to send
+     * @returns Promise with response
+     */
+    async post<T>(uri: string, data: object): Promise<T>;
+
+    /** 
+     * Execute HTTP request
+     * @param uri - Request path
+     * @param method - HTTP method
+     * @param data - Data to send
+     * @returns Promise with response
+     */
+    private async request<T>(uri: string, method: string, data?: object): Promise<T>;
+}
+
+/**
+ * Form - Base class for form handling
+ * Responsible for:
+ * - Form data collection
+ * - Field validation
+ * - Data submission
+ */
+class Form<T> extends Component<T> {
+    /** Field validation errors */
+    protected _errors: ValidationErrors = {};
+
+    /** 
+     * @param container - HTML form
+     * @param validator - Validator instance
+     */
+    constructor(
+        protected container: HTMLFormElement, 
+        protected validator: ValidationModel
+    );
+
+    /** 
+     * Set form submission handler
+     * @param handler - Submission handling function
+     */
+    protected onSubmit(handler: (data: T) => void): void;
+
+    /** 
+     * Validate form field
+     * @param field - Field to validate
+     */
+    protected validateField(field: HTMLInputElement): void;
+
+    /** 
+     * Validate entire form
+     * @returns Form validity status
+     */
+    protected validateForm(): boolean;
 }
 ```
 
-#### Layer Separation
-
-##### Model Layer
-
-- `AppState`: Application state management
-  - Product catalog
-  - Cart operations
-  - Order state
-- `OrderModel`: Order processing
-  - Form validation
-  - Payment method handling
-  - Order submission
-
-##### View Layer
-
-- `ProductCard`: Product display components
-  - Catalog item rendering
-  - Interaction handling
-- `CartView`: Shopping cart interface
-  - Content display
-  - Total updates
-- `Modal`: Modal window system
-  - Any content display
-  - Lifecycle management
-
-##### Presenter Layer (index.ts)
-
-- Connects Model and View
-- Sets up event listeners
-- Handles business logic
-- Manages application flow
-
-#### Application Components
-
-##### ProductCard extends TemplatedComponent<IProduct>
+### Model Classes
 
 ```typescript
 /**
- * ProductCard - Product card component
+ * AppState - Main application state manager
  * Responsible for:
- * - Displaying product information
- * - Handling product actions (adding to cart)
+ * - Product catalog management
+ * - Shopping cart state
+ * - Order state
+ * - State change event generation
  */
-class ProductCard extends TemplatedComponent<IProduct> {
-	private buttonElement: HTMLButtonElement;
-	private priceElement: HTMLElement;
-	private titleElement: HTMLElement;
-	private imageElement: HTMLImageElement;
+class AppState extends EventEmitter {
+    /** Product catalog */
+    private _catalog: IProduct[] = [];
+    /** Cart items */
+    private _cart: ICart = [];
+    /** Loading state */
+    private _loading: boolean = false;
+    /** Current order */
+    private _order: IOrderForm | null = null;
 
-	constructor(container: HTMLElement, events: IEvents) {
-		super(container);
-		this.events = events;
-		// Elements initialization
-	}
+    /** 
+     * @param api - API interaction instance
+     */
+    constructor(api: Api);
 
-	/**
-	 * Render product card
-	 * @param product - Product data
-	 */
-	render(product: IProduct): void {
-		// Rendering logic
-	}
+    /** 
+     * Load product catalog
+     * @returns Promise with array of products
+     */
+    async loadCatalog(): Promise<IProduct[]>;
 
-	/**
-	 * Button click handler
-	 * Generates cart:add event
-	 */
-	private handleClick(): void {
-		this.events.emit('cart:add', { id: this.product.id });
-	}
+    /** 
+     * Add item to cart
+     * @param item - Product to add
+     */
+    addToCart(item: IProduct): void;
+
+    /** 
+     * Remove item from cart
+     * @param id - Product ID to remove
+     */
+    removeFromCart(id: string): void;
+
+    /** 
+     * Get cart contents
+     * @returns Array of cart items
+     */
+    getCart(): ICart;
+}
+
+/**
+ * OrderModel - Order processing and validation
+ * Responsible for:
+ * - Order data management
+ * - Form validation
+ * - Order submission
+ * - Payment processing
+ */
+class OrderModel extends EventEmitter {
+    /** Order data */
+    private _data: IOrderForm;
+    /** Validation errors */
+    private _errors: ValidationErrors = {};
+
+    /** 
+     * @param api - API interaction instance
+     */
+    constructor(api: Api);
+
+    /** 
+     * Validate order form
+     * @param form - Form data to validate
+     * @returns Validation errors object
+     */
+    validate(form: IOrderForm): ValidationErrors;
+
+    /** 
+     * Submit order
+     * @param form - Order form data
+     * @returns Promise with server response
+     */
+    async submit(form: IOrderForm): Promise<IOrderResponse>;
 }
 ```
 
-##### CartView extends TemplatedComponent<ICart>
+### View Components
 
 ```typescript
+/**
+ * ProductCard - Base product card component
+ * Responsible for:
+ * - Displaying product information
+ * - Handling product actions
+ */
+class ProductCard extends TemplatedComponent<IProduct> {
+    /** Add to cart button */
+    protected _button: HTMLButtonElement;
+    /** Product title element */
+    protected _title: HTMLElement;
+    /** Price element */
+    protected _price: HTMLElement;
+    /** Image element */
+    protected _image: HTMLImageElement;
+
+    /** 
+     * @param container - DOM element for card
+     * @param template - Card HTML template
+     */
+    constructor(container: HTMLElement, template: HTMLTemplateElement);
+
+    /** 
+     * Render product card
+     * @param data - Product data
+     */
+    render(data: IProduct): void;
+
+    /** Card click handler */
+    protected handleClick(): void;
+}
+
 /**
  * CartView - Shopping cart component
  * Responsible for:
@@ -1006,155 +1335,123 @@ class ProductCard extends TemplatedComponent<IProduct> {
  * - Showing total amount
  */
 class CartView extends TemplatedComponent<ICart> {
-	private itemsContainer: HTMLElement;
-	private totalElement: HTMLElement;
-	private checkoutButton: HTMLButtonElement;
+    /** Items list */
+    protected _list: HTMLElement;
+    /** Total amount element */
+    protected _total: HTMLElement;
+    /** Checkout button */
+    protected _button: HTMLButtonElement;
 
-	constructor(container: HTMLElement, events: IEvents) {
-		super(container);
-		this.events = events;
-		// Elements initialization
-	}
+    /** 
+     * @param container - DOM element for cart
+     * @param template - Cart HTML template
+     */
+    constructor(container: HTMLElement, template: HTMLTemplateElement);
 
-	/**
-	 * Render cart
-	 * @param cart - Cart data
-	 */
-	render(cart: ICart): void {
-		// Rendering logic
-	}
+    /** 
+     * Render cart
+     * @param cart - Array of cart items
+     */
+    render(cart: ICart): void;
 
-	/**
-	 * Update total amount
-	 * @param total - Total sum
-	 */
-	updateTotal(total: number): void {
-		// Total display update
-	}
+    /** 
+     * Update total amount
+     * @param total - New total
+     */
+    protected updateTotal(total: number): void;
 }
-```
 
-##### OrderForm extends TemplatedComponent<IOrderForm>
-
-```typescript
 /**
  * OrderForm - Order form component
  * Responsible for:
  * - Displaying order form
- * - Input data validation
- * - Order submission
+ * - Field validation
+ * - Form submission
  */
-class OrderForm extends TemplatedComponent<IOrderForm> {
-	private emailInput: HTMLInputElement;
-	private phoneInput: HTMLInputElement;
-	private addressInput: HTMLInputElement;
-	private paymentInputs: NodeListOf<HTMLInputElement>;
+class OrderForm extends Form<IOrderForm> {
+    /** Email field */
+    protected _email: HTMLInputElement;
+    /** Phone field */
+    protected _phone: HTMLInputElement;
+    /** Address field */
+    protected _address: HTMLInputElement;
+    /** Payment method radio buttons */
+    protected _payment: NodeListOf<HTMLInputElement>;
 
-	constructor(container: HTMLElement, events: IEvents) {
-		super(container);
-		this.events = events;
-		// Form elements initialization
-	}
+    /** 
+     * @param container - Order HTML form
+     * @param validator - Validator instance
+     */
+    constructor(container: HTMLFormElement, validator: ValidationModel);
 
-	/**
-	 * Render form
-	 * @param data - Initial form data
-	 */
-	render(data?: IOrderForm): void {
-		// Rendering logic
-	}
+    /** 
+     * Render form
+     * @param data - Initial form data
+     */
+    render(data?: IOrderForm): void;
 
-	/**
-	 * Form validation
-	 * @returns Validation result
-	 */
-	validate(): IValidationResult {
-		// Validation logic
-	}
+    /** Form submission handler */
+    protected handleSubmit(): void;
 }
-```
 
-##### Modal extends Component<any>
-
-```typescript
 /**
  * Modal - Modal window component
  * Responsible for:
  * - Displaying modal windows
- * - Managing window state (open/closed)
+ * - Managing window state
  * - Handling window actions
  */
-class Modal extends Component<any> {
-	private closeButton: HTMLElement;
-	private contentContainer: HTMLElement;
-	private isOpen: boolean = false;
+class Modal extends Component<HTMLElement> {
+    /** Close button */
+    protected _closeButton: HTMLElement;
+    /** Content container */
+    protected _content: HTMLElement;
+    /** Open state flag */
+    protected _isOpen: boolean = false;
 
-	constructor(container: HTMLElement, events: IEvents) {
-		super(container);
-		this.events = events;
-		// Elements initialization
-	}
+    /** 
+     * @param container - DOM element for modal
+     */
+    constructor(container: HTMLElement);
 
-	/**
-	 * Open modal window
-	 * @param content - Window content
-	 */
-	open(content: HTMLElement): void {
-		// Opening logic
-	}
+    /** 
+     * Render content
+     * @param content - HTML element to display
+     */
+    render(content: HTMLElement): void;
 
-	/**
-	 * Close modal window
-	 */
-	close(): void {
-		// Closing logic
-	}
-}
-```
+    /** Open modal window */
+    open(): void;
 
-#### Data Models and State
+    /** Close modal window */
+    close(): void;
 
-```typescript
-/**
- * IProduct - Product interface
- * Describes product data structure in catalog
- */
-interface IProduct {
-	id: string; // Unique product identifier
-	title: string; // Product name
-	description: string; // Product description
-	category: string; // Product category
-	price: number; // Product price
-	image: string; // Product image URL
+    /** Close handler */
+    protected handleClose(): void;
 }
 
 /**
- * ICartItem - Cart item interface
- * Extends IProduct with additional cart fields
+ * HeaderView - Header component
+ * Responsible for:
+ * - Displaying cart counter
+ * - Managing cart button
  */
-interface ICartItem extends IProduct {
-	quantity: number; // Item quantity in cart
-	position: number; // Item position in cart
-}
+class HeaderView extends Component<number> {
+    /** Items counter */
+    protected _counter: HTMLElement;
+    /** Cart button */
+    protected _button: HTMLButtonElement;
 
-/**
- * ICart - Shopping cart interface
- * Describes shopping cart data structure
- */
-interface ICart {
-	items: ICartItem[]; // Array of cart items
-	total: number; // Order total amount
-}
+    /** 
+     * @param container - DOM element for header
+     */
+    constructor(container: HTMLElement);
 
-/**
- * IOrderForm - Order form interface
- * Describes order submission data structure
- */
-interface IOrderForm {
-	email: string; // Customer email
-	phone: string; // Customer phone
-	address: string; // Delivery address
-	payment: 'card' | 'cash'; // Payment method
+    /** 
+     * Render counter
+     * @param count - Number of items in cart
+     */
+    render(count: number): void;
 }
 ```
 
