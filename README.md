@@ -158,28 +158,28 @@ class EventEmitter {
     /** Обработчики всех событий */
     private _allEventHandlers: Set<Callback>;
 
-    /** 
+    /**
      * Подписка на событие
      * @param event - Имя события или RegExp для фильтрации
      * @param callback - Функция-обработчик события
      */
     on<T extends object>(event: EventName, callback: (data: T) => void): void;
 
-    /** 
+    /**
      * Отписка от события
      * @param event - Имя события
      * @param callback - Функция-обработчик для удаления
      */
     off(event: EventName, callback: Function): void;
 
-    /** 
+    /**
      * Инициировать событие
      * @param event - Имя события
      * @param data - Данные события
      */
     emit<T extends object>(event: string, data?: T): void;
 
-    /** 
+    /**
      * Подписка на все события
      * @param callback - Обработчик всех событий
      */
@@ -188,7 +188,7 @@ class EventEmitter {
     /** Сбросить все обработчики */
     offAll(): void;
 
-    /** 
+    /**
      * Создать триггер события
      * @param event - Имя события
      * @param context - Контекст для данных события
@@ -205,12 +205,12 @@ class EventEmitter {
  * - Обработку событий компонента
  */
 abstract class Component<T> {
-    /** 
+    /**
      * @param container - DOM элемент, в который будет вставлен компонент
      */
     protected constructor(protected readonly container: HTMLElement);
 
-    /** 
+    /**
      * Отрисовка компонента
      * @param data - Данные для отрисовки
      */
@@ -231,57 +231,59 @@ abstract class TemplatedComponent<T> extends Component<T> {
     /** HTML шаблон компонента */
     protected readonly template: HTMLTemplateElement;
 
-    /** 
+    /**
      * @param container - DOM элемент для компонента
      * @param template - HTML шаблон компонента
      */
     protected constructor(container: HTMLElement, template: HTMLTemplateElement);
 
-    /** 
+    /**
      * Клонирование шаблона
      * @returns HTML элемент, созданный из шаблона
      */
     protected clone(): HTMLElement;
 }
 
-/**
+**
  * Api - Класс для работы с REST API
  * Отвечает за:
  * - HTTP запросы к серверу
  * - Обработку ответов
  * - Обработку ошибок
+ * - JSON преобразование
+ * - Управление заголовками запросов
  */
 class Api {
-    /** 
+    /**
      * @param baseUrl - Базовый URL API
-     * @param options - Опции запросов fetch
+     * @param options - Дополнительные настройки fetch
      */
     constructor(
-        private readonly baseUrl: string, 
+        private readonly baseUrl: string,
         private readonly options: RequestInit = {}
     );
 
-    /** 
-     * GET-запрос
-     * @param uri - Путь запроса
-     * @returns Promise с данными
+    /**
+     * Выполнить GET-запрос
+     * @param uri - Путь эндпоинта
+     * @returns Promise с типизированными данными ответа
      */
     async get<T>(uri: string): Promise<T>;
 
-    /** 
-     * POST-запрос
-     * @param uri - Путь запроса
-     * @param data - Данные для отправки
-     * @returns Promise с ответом
+    /**
+     * Выполнить POST-запрос
+     * @param uri - Путь эндпоинта
+     * @param data - Данные запроса
+     * @returns Promise с типизированными данными ответа
      */
     async post<T>(uri: string, data: object): Promise<T>;
 
-    /** 
-     * Выполнение HTTP запроса
-     * @param uri - Путь запроса
+    /**
+     * Внутренний метод для выполнения HTTP запросов
+     * @param uri - Путь эндпоинта
      * @param method - HTTP метод
-     * @param data - Данные для отправки
-     * @returns Promise с ответом
+     * @param data - Опциональные данные запроса
+     * @returns Promise с типизированными данными ответа
      */
     private async request<T>(uri: string, method: string, data?: object): Promise<T>;
 }
@@ -297,28 +299,28 @@ class Form<T> extends Component<T> {
     /** Ошибки валидации полей */
     protected _errors: ValidationErrors = {};
 
-    /** 
+    /**
      * @param container - HTML форма
      * @param validator - Экземпляр валидатора
      */
     constructor(
-        protected container: HTMLFormElement, 
+        protected container: HTMLFormElement,
         protected validator: ValidationModel
     );
 
-    /** 
+    /**
      * Установка обработчика отправки формы
      * @param handler - Функция обработки отправки
      */
     protected onSubmit(handler: (data: T) => void): void;
 
-    /** 
+    /**
      * Валидация поля формы
      * @param field - Поле для валидации
      */
     protected validateField(field: HTMLInputElement): void;
 
-    /** 
+    /**
      * Валидация всей формы
      * @returns Признак валидности формы
      */
@@ -338,43 +340,43 @@ class Form<T> extends Component<T> {
  * - Генерацию событий изменения состояния
  */
 class AppState extends EventEmitter {
-    /** Каталог товаров */
-    private _catalog: IProduct[] = [];
-    /** Товары в корзине */
-    private _cart: ICart = [];
-    /** Состояние загрузки */
-    private _loading: boolean = false;
-    /** Текущий заказ */
-    private _order: IOrderForm | null = null;
+	/** Каталог товаров */
+	private _catalog: IProduct[] = [];
+	/** Товары в корзине */
+	private _cart: ICart = [];
+	/** Состояние загрузки */
+	private _loading: boolean = false;
+	/** Текущий заказ */
+	private _order: IOrderForm | null = null;
 
-    /** 
-     * @param api - Экземпляр для работы с API
-     */
-    constructor(api: Api);
+	/**
+	 * @param api - Экземпляр для работы с API
+	 */
+	constructor(api: Api);
 
-    /** 
-     * Загрузка каталога товаров
-     * @returns Promise с массивом товаров
-     */
-    async loadCatalog(): Promise<IProduct[]>;
+	/**
+	 * Загрузка каталога товаров
+	 * @returns Promise с массивом товаров
+	 */
+	async loadCatalog(): Promise<IProduct[]>;
 
-    /** 
-     * Добавление товара в корзину
-     * @param item - Товар для добавления
-     */
-    addToCart(item: IProduct): void;
+	/**
+	 * Добавление товара в корзину
+	 * @param item - Товар для добавления
+	 */
+	addToCart(item: IProduct): void;
 
-    /** 
-     * Удаление товара из корзины
-     * @param id - ID товара для удаления
-     */
-    removeFromCart(id: string): void;
+	/**
+	 * Удаление товара из корзины
+	 * @param id - ID товара для удаления
+	 */
+	removeFromCart(id: string): void;
 
-    /** 
-     * Получение содержимого корзины
-     * @returns Массив товаров в корзине
-     */
-    getCart(): ICart;
+	/**
+	 * Получение содержимого корзины
+	 * @returns Массив товаров в корзине
+	 */
+	getCart(): ICart;
 }
 
 /**
@@ -386,29 +388,29 @@ class AppState extends EventEmitter {
  * - Обработку оплаты
  */
 class OrderModel extends EventEmitter {
-    /** Данные заказа */
-    private _data: IOrderForm;
-    /** Ошибки валидации */
-    private _errors: ValidationErrors = {};
+	/** Данные заказа */
+	private _data: IOrderForm;
+	/** Ошибки валидации */
+	private _errors: ValidationErrors = {};
 
-    /** 
-     * @param api - Экземпляр класса для работы с API
-     */
-    constructor(api: Api);
+	/**
+	 * @param api - Экземпляр класса для работы с API
+	 */
+	constructor(api: Api);
 
-    /** 
-     * Валидация формы заказа
-     * @param form - Данные формы для проверки
-     * @returns Объект с ошибками валидации
-     */
-    validate(form: IOrderForm): ValidationErrors;
+	/**
+	 * Валидация формы заказа
+	 * @param form - Данные формы для проверки
+	 * @returns Объект с ошибками валидации
+	 */
+	validate(form: IOrderForm): ValidationErrors;
 
-    /** 
-     * Отправка заказа
-     * @param form - Данные формы заказа
-     * @returns Promise с ответом сервера
-     */
-    async submit(form: IOrderForm): Promise<IOrderResponse>;
+	/**
+	 * Отправка заказа
+	 * @param form - Данные формы заказа
+	 * @returns Promise с ответом сервера
+	 */
+	async submit(form: IOrderForm): Promise<IOrderResponse>;
 }
 ```
 
@@ -422,29 +424,29 @@ class OrderModel extends EventEmitter {
  * - Обработку действий с товаром
  */
 class ProductCard extends TemplatedComponent<IProduct> {
-    /** Кнопка добавления в корзину */
-    protected _button: HTMLButtonElement;
-    /** Элемент с названием товара */
-    protected _title: HTMLElement;
-    /** Элемент с ценой */
-    protected _price: HTMLElement;
-    /** Элемент с изображением */
-    protected _image: HTMLImageElement;
+	/** Кнопка добавления в корзину */
+	protected _button: HTMLButtonElement;
+	/** Элемент с названием товара */
+	protected _title: HTMLElement;
+	/** Элемент с ценой */
+	protected _price: HTMLElement;
+	/** Элемент с изображением */
+	protected _image: HTMLImageElement;
 
-    /** 
-     * @param container - DOM элемент для карточки
-     * @param template - HTML шаблон карточки
-     */
-    constructor(container: HTMLElement, template: HTMLTemplateElement);
+	/**
+	 * @param container - DOM элемент для карточки
+	 * @param template - HTML шаблон карточки
+	 */
+	constructor(container: HTMLElement, template: HTMLTemplateElement);
 
-    /** 
-     * Отрисовка карточки товара
-     * @param data - Данные о товаре
-     */
-    render(data: IProduct): void;
+	/**
+	 * Отрисовка карточки товара
+	 * @param data - Данные о товаре
+	 */
+	render(data: IProduct): void;
 
-    /** Обработчик клика по карточке */
-    protected handleClick(): void;
+	/** Обработчик клика по карточке */
+	protected handleClick(): void;
 }
 
 /**
@@ -455,30 +457,30 @@ class ProductCard extends TemplatedComponent<IProduct> {
  * - Отображение общей суммы
  */
 class CartView extends TemplatedComponent<ICart> {
-    /** Список товаров */
-    protected _list: HTMLElement;
-    /** Элемент с общей суммой */
-    protected _total: HTMLElement;
-    /** Кнопка оформления заказа */
-    protected _button: HTMLButtonElement;
+	/** Список товаров */
+	protected _list: HTMLElement;
+	/** Элемент с общей суммой */
+	protected _total: HTMLElement;
+	/** Кнопка оформления заказа */
+	protected _button: HTMLButtonElement;
 
-    /** 
-     * @param container - DOM элемент для корзины
-     * @param template - HTML шаблон корзины
-     */
-    constructor(container: HTMLElement, template: HTMLTemplateElement);
+	/**
+	 * @param container - DOM элемент для корзины
+	 * @param template - HTML шаблон корзины
+	 */
+	constructor(container: HTMLElement, template: HTMLTemplateElement);
 
-    /** 
-     * Отрисовка корзины
-     * @param cart - Массив товаров в корзине
-     */
-    render(cart: ICart): void;
+	/**
+	 * Отрисовка корзины
+	 * @param cart - Массив товаров в корзине
+	 */
+	render(cart: ICart): void;
 
-    /** 
-     * Обновление общей суммы
-     * @param total - Новая сумма
-     */
-    protected updateTotal(total: number): void;
+	/**
+	 * Обновление общей суммы
+	 * @param total - Новая сумма
+	 */
+	protected updateTotal(total: number): void;
 }
 
 /**
@@ -489,29 +491,29 @@ class CartView extends TemplatedComponent<ICart> {
  * - Отправку формы
  */
 class OrderForm extends Form<IOrderForm> {
-    /** Поле email */
-    protected _email: HTMLInputElement;
-    /** Поле телефона */
-    protected _phone: HTMLInputElement;
-    /** Поле адреса */
-    protected _address: HTMLInputElement;
-    /** Радио-кнопки способа оплаты */
-    protected _payment: NodeListOf<HTMLInputElement>;
+	/** Поле email */
+	protected _email: HTMLInputElement;
+	/** Поле телефона */
+	protected _phone: HTMLInputElement;
+	/** Поле адреса */
+	protected _address: HTMLInputElement;
+	/** Радио-кнопки способа оплаты */
+	protected _payment: NodeListOf<HTMLInputElement>;
 
-    /** 
-     * @param container - HTML форма заказа
-     * @param validator - Экземпляр валидатора
-     */
-    constructor(container: HTMLFormElement, validator: ValidationModel);
+	/**
+	 * @param container - HTML форма заказа
+	 * @param validator - Экземпляр валидатора
+	 */
+	constructor(container: HTMLFormElement, validator: ValidationModel);
 
-    /** 
-     * Отрисовка формы
-     * @param data - Начальные данные формы
-     */
-    render(data?: IOrderForm): void;
+	/**
+	 * Отрисовка формы
+	 * @param data - Начальные данные формы
+	 */
+	render(data?: IOrderForm): void;
 
-    /** Обработчик отправки формы */
-    protected handleSubmit(): void;
+	/** Обработчик отправки формы */
+	protected handleSubmit(): void;
 }
 
 /**
@@ -522,32 +524,32 @@ class OrderForm extends Form<IOrderForm> {
  * - Обработку действий в окне
  */
 class Modal extends Component<HTMLElement> {
-    /** Кнопка закрытия */
-    protected _closeButton: HTMLElement;
-    /** Контейнер для контента */
-    protected _content: HTMLElement;
-    /** Флаг открытого состояния */
-    protected _isOpen: boolean = false;
+	/** Кнопка закрытия */
+	protected _closeButton: HTMLElement;
+	/** Контейнер для контента */
+	protected _content: HTMLElement;
+	/** Флаг открытого состояния */
+	protected _isOpen: boolean = false;
 
-    /** 
-     * @param container - DOM элемент для модального окна
-     */
-    constructor(container: HTMLElement);
+	/**
+	 * @param container - DOM элемент для модального окна
+	 */
+	constructor(container: HTMLElement);
 
-    /** 
-     * Отрисовка содержимого
-     * @param content - HTML элемент для отображения
-     */
-    render(content: HTMLElement): void;
+	/**
+	 * Отрисовка содержимого
+	 * @param content - HTML элемент для отображения
+	 */
+	render(content: HTMLElement): void;
 
-    /** Открытие модального окна */
-    open(): void;
+	/** Открытие модального окна */
+	open(): void;
 
-    /** Закрытие модального окна */
-    close(): void;
+	/** Закрытие модального окна */
+	close(): void;
 
-    /** Обработчик закрытия окна */
-    protected handleClose(): void;
+	/** Обработчик закрытия окна */
+	protected handleClose(): void;
 }
 
 /**
@@ -557,21 +559,21 @@ class Modal extends Component<HTMLElement> {
  * - Управление кнопкой корзины
  */
 class HeaderView extends Component<number> {
-    /** Счетчик товаров */
-    protected _counter: HTMLElement;
-    /** Кнопка корзины */
-    protected _button: HTMLButtonElement;
+	/** Счетчик товаров */
+	protected _counter: HTMLElement;
+	/** Кнопка корзины */
+	protected _button: HTMLButtonElement;
 
-    /** 
-     * @param container - DOM элемент для заголовка
-     */
-    constructor(container: HTMLElement);
+	/**
+	 * @param container - DOM элемент для заголовка
+	 */
+	constructor(container: HTMLElement);
 
-    /** 
-     * Отрисовка счетчика
-     * @param count - Количество товаров в корзине
-     */
-    render(count: number): void;
+	/**
+	 * Отрисовка счетчика
+	 * @param count - Количество товаров в корзине
+	 */
+	render(count: number): void;
 }
 ```
 
@@ -844,48 +846,48 @@ src/
 
 #### API Интеграция
 
-Проект использует класс Api для взаимодействия с REST API:
+Проект использует [класс Api](#базовые-классы) для взаимодействия с REST API. Этот класс предоставляет типизированный интерфейс для выполнения HTTP-запросов к бэкенду.
+
+Пример использования:
 
 ```typescript
-/**
- * Api - Класс для работы с REST API
- * Отвечает за:
- * - HTTP запросы к серверу
- * - Обработку ответов
- * - Обработку ошибок
- */
-class Api {
-	constructor(baseUrl: string, options?: RequestInit) {
-		// Инициализация
-	}
+// Инициализация API с базовым URL
+const api = new Api('https://api.example.com');
 
-	/**
-	 * GET-запрос
-	 * @param uri - Путь запроса
-	 * @returns Promise с данными
-	 */
-	async get(uri: string): Promise<object> {
-		// Реализация GET
-	}
+// Получение каталога товаров
+const products = await api.get<IProduct[]>('/products');
 
-	/**
-	 * POST-запрос
-	 * @param uri - Путь запроса
-	 * @param data - Данные для отправки
-	 * @returns Promise с ответом
-	 */
-	async post(uri: string, data: object): Promise<object> {
-		// Реализация POST
+// Отправка заказа
+const orderResponse = await api.post<IOrderResponse>('/orders', {
+	items: cart,
+	customer: orderData,
+});
+```
+
+Класс Api автоматически обрабатывает:
+
+- Типобезопасность через дженерики
+- Сериализацию/десериализацию JSON
+- HTTP ошибки
+- Заголовки запросов
+- Конфигурацию базового URL
+
+Пример обработки ошибок:
+
+```typescript
+try {
+	const response = await api.post<IOrderResponse>('/orders', orderData);
+	// Обработка успешного ответа
+} catch (error) {
+	if (error instanceof ApiError) {
+		// Обработка специфических ошибок API
+		console.error(`Ошибка API ${error.code}: ${error.message}`);
+	} else {
+		// Обработка сетевых или других ошибок
+		console.error('Запрос не удался:', error);
 	}
 }
 ```
-
-Автоматически обрабатывает:
-
-- JSON преобразование
-- Ошибки HTTP
-- Заголовки запросов
-- Параметры запросов
 
 #### Особенности реализации
 
@@ -949,6 +951,7 @@ This project uses the MVP (Model-View-Presenter) pattern and an event-driven app
 MVP divides the application into three main layers:
 
 - **Model**:
+
   - Handles data and business logic
   - Manages application state
   - Performs data validation
@@ -957,6 +960,7 @@ MVP divides the application into three main layers:
   - Independent from other layers
 
 - **View**:
+
   - Handles data display to users
   - Processes user input
   - Generates events for user actions
@@ -971,6 +975,7 @@ MVP divides the application into three main layers:
   - Located in the main application file (index.ts)
 
 This separation provides:
+
 - Clear separation of responsibilities
 - Improved code testability
 - Simplified maintenance and scaling
@@ -978,6 +983,7 @@ This separation provides:
 #### Event-Driven Approach
 
 Component interaction is implemented through events because it provides:
+
 - Loose code coupling
 - Component independence
 - Easy functionality addition
@@ -989,6 +995,7 @@ Component interaction is implemented through events because it provides:
 #### Model Layer
 
 - **AppState**: Application state management
+
   - Product catalog
   - Cart operations
   - Order state
@@ -1001,10 +1008,12 @@ Component interaction is implemented through events because it provides:
 #### View Layer
 
 - **ProductCard**: Product display components
+
   - Catalog item rendering
   - Interaction handling
 
 - **CartView**: Cart interface
+
   - Content display
   - Total updates
 
@@ -1015,6 +1024,7 @@ Component interaction is implemented through events because it provides:
 #### Presenter Layer
 
 - **Main Functions**:
+
   - Model and View connection
   - Event listener setup
   - Business logic handling
@@ -1038,43 +1048,43 @@ Component interaction is implemented through events because it provides:
  * - Supporting RegExp and wildcards in event names
  */
 class EventEmitter {
-    /** Event handler storage */
-    private _events: Map<EventName, Set<Callback>>;
-    /** All events handlers */
-    private _allEventHandlers: Set<Callback>;
+	/** Event handler storage */
+	private _events: Map<EventName, Set<Callback>>;
+	/** All events handlers */
+	private _allEventHandlers: Set<Callback>;
 
-    /** Subscribe to event
-     * @param event - Event name or RegExp for filtering
-     * @param callback - Event handler function
-     */
-    on<T extends object>(event: EventName, callback: (data: T) => void): void;
+	/** Subscribe to event
+	 * @param event - Event name or RegExp for filtering
+	 * @param callback - Event handler function
+	 */
+	on<T extends object>(event: EventName, callback: (data: T) => void): void;
 
-    /** Unsubscribe from event
-     * @param event - Event name
-     * @param callback - Handler function to remove
-     */
-    off(event: EventName, callback: Function): void;
+	/** Unsubscribe from event
+	 * @param event - Event name
+	 * @param callback - Handler function to remove
+	 */
+	off(event: EventName, callback: Function): void;
 
-    /** Emit event
-     * @param event - Event name
-     * @param data - Event data
-     */
-    emit<T extends object>(event: string, data?: T): void;
+	/** Emit event
+	 * @param event - Event name
+	 * @param data - Event data
+	 */
+	emit<T extends object>(event: string, data?: T): void;
 
-    /** Subscribe to all events
-     * @param callback - Handler for all events
-     */
-    onAll(callback: (event: EmitterEvent) => void): void;
+	/** Subscribe to all events
+	 * @param callback - Handler for all events
+	 */
+	onAll(callback: (event: EmitterEvent) => void): void;
 
-    /** Reset all handlers */
-    offAll(): void;
+	/** Reset all handlers */
+	offAll(): void;
 
-    /** Create event trigger
-     * @param event - Event name
-     * @param context - Context for event data
-     * @returns Event generator function
-     */
-    trigger<T extends object>(event: string, context?: Partial<T>): void;
+	/** Create event trigger
+	 * @param event - Event name
+	 * @param context - Context for event data
+	 * @returns Event generator function
+	 */
+	trigger<T extends object>(event: string, context?: Partial<T>): void;
 }
 
 /**
@@ -1085,19 +1095,19 @@ class EventEmitter {
  * - Handling component events
  */
 abstract class Component<T> {
-    /** 
-     * @param container - DOM element where component will be inserted
-     */
-    protected constructor(protected readonly container: HTMLElement);
+	/**
+	 * @param container - DOM element where component will be inserted
+	 */
+	protected constructor(protected readonly container: HTMLElement);
 
-    /** 
-     * Render component
-     * @param data - Data for rendering
-     */
-    abstract render(data?: T): void;
+	/**
+	 * Render component
+	 * @param data - Data for rendering
+	 */
+	abstract render(data?: T): void;
 
-    /** Clear component contents */
-    protected clear(): void;
+	/** Clear component contents */
+	protected clear(): void;
 }
 
 /**
@@ -1108,62 +1118,68 @@ abstract class Component<T> {
  * - Template handling methods
  */
 abstract class TemplatedComponent<T> extends Component<T> {
-    /** Component's HTML template */
-    protected readonly template: HTMLTemplateElement;
+	/** Component's HTML template */
+	protected readonly template: HTMLTemplateElement;
 
-    /** 
-     * @param container - DOM element for component
-     * @param template - Component's HTML template
-     */
-    protected constructor(container: HTMLElement, template: HTMLTemplateElement);
+	/**
+	 * @param container - DOM element for component
+	 * @param template - Component's HTML template
+	 */
+	protected constructor(container: HTMLElement, template: HTMLTemplateElement);
 
-    /** 
-     * Clone template
-     * @returns HTML element created from template
-     */
-    protected clone(): HTMLElement;
+	/**
+	 * Clone template
+	 * @returns HTML element created from template
+	 */
+	protected clone(): HTMLElement;
 }
 
 /**
  * Api - Class for REST API interaction
  * Responsible for:
- * - HTTP server requests
+ * - HTTP requests to server
  * - Response handling
  * - Error handling
+ * - JSON conversion
+ * - Request headers management
  */
 class Api {
-    /** 
-     * @param baseUrl - API base URL
-     * @param options - Fetch request options
-     */
-    constructor(
-        private readonly baseUrl: string, 
-        private readonly options: RequestInit = {}
-    );
+	/**
+	 * @param baseUrl - API base URL
+	 * @param options - Optional fetch configuration
+	 */
+	constructor(
+		private readonly baseUrl: string,
+		private readonly options: RequestInit = {}
+	);
 
-    /** 
-     * GET request
-     * @param uri - Request path
-     * @returns Promise with data
-     */
-    async get<T>(uri: string): Promise<T>;
+	/**
+	 * Perform GET request
+	 * @param uri - Endpoint path
+	 * @returns Promise with typed response data
+	 */
+	async get<T>(uri: string): Promise<T>;
 
-    /** 
-     * POST request
-     * @param uri - Request path
-     * @param data - Data to send
-     * @returns Promise with response
-     */
-    async post<T>(uri: string, data: object): Promise<T>;
+	/**
+	 * Perform POST request
+	 * @param uri - Endpoint path
+	 * @param data - Request payload
+	 * @returns Promise with typed response data
+	 */
+	async post<T>(uri: string, data: object): Promise<T>;
 
-    /** 
-     * Execute HTTP request
-     * @param uri - Request path
-     * @param method - HTTP method
-     * @param data - Data to send
-     * @returns Promise with response
-     */
-    private async request<T>(uri: string, method: string, data?: object): Promise<T>;
+	/**
+	 * Internal method for making HTTP requests
+	 * @param uri - Endpoint path
+	 * @param method - HTTP method
+	 * @param data - Optional request payload
+	 * @returns Promise with typed response data
+	 */
+	private async request<T>(
+		uri: string,
+		method: string,
+		data?: object
+	): Promise<T>;
 }
 
 /**
@@ -1174,35 +1190,35 @@ class Api {
  * - Data submission
  */
 class Form<T> extends Component<T> {
-    /** Field validation errors */
-    protected _errors: ValidationErrors = {};
+	/** Field validation errors */
+	protected _errors: ValidationErrors = {};
 
-    /** 
-     * @param container - HTML form
-     * @param validator - Validator instance
-     */
-    constructor(
-        protected container: HTMLFormElement, 
-        protected validator: ValidationModel
-    );
+	/**
+	 * @param container - HTML form
+	 * @param validator - Validator instance
+	 */
+	constructor(
+		protected container: HTMLFormElement,
+		protected validator: ValidationModel
+	);
 
-    /** 
-     * Set form submission handler
-     * @param handler - Submission handling function
-     */
-    protected onSubmit(handler: (data: T) => void): void;
+	/**
+	 * Set form submission handler
+	 * @param handler - Submission handling function
+	 */
+	protected onSubmit(handler: (data: T) => void): void;
 
-    /** 
-     * Validate form field
-     * @param field - Field to validate
-     */
-    protected validateField(field: HTMLInputElement): void;
+	/**
+	 * Validate form field
+	 * @param field - Field to validate
+	 */
+	protected validateField(field: HTMLInputElement): void;
 
-    /** 
-     * Validate entire form
-     * @returns Form validity status
-     */
-    protected validateForm(): boolean;
+	/**
+	 * Validate entire form
+	 * @returns Form validity status
+	 */
+	protected validateForm(): boolean;
 }
 ```
 
@@ -1218,43 +1234,43 @@ class Form<T> extends Component<T> {
  * - State change event generation
  */
 class AppState extends EventEmitter {
-    /** Product catalog */
-    private _catalog: IProduct[] = [];
-    /** Cart items */
-    private _cart: ICart = [];
-    /** Loading state */
-    private _loading: boolean = false;
-    /** Current order */
-    private _order: IOrderForm | null = null;
+	/** Product catalog */
+	private _catalog: IProduct[] = [];
+	/** Cart items */
+	private _cart: ICart = [];
+	/** Loading state */
+	private _loading: boolean = false;
+	/** Current order */
+	private _order: IOrderForm | null = null;
 
-    /** 
-     * @param api - API interaction instance
-     */
-    constructor(api: Api);
+	/**
+	 * @param api - API interaction instance
+	 */
+	constructor(api: Api);
 
-    /** 
-     * Load product catalog
-     * @returns Promise with array of products
-     */
-    async loadCatalog(): Promise<IProduct[]>;
+	/**
+	 * Load product catalog
+	 * @returns Promise with array of products
+	 */
+	async loadCatalog(): Promise<IProduct[]>;
 
-    /** 
-     * Add item to cart
-     * @param item - Product to add
-     */
-    addToCart(item: IProduct): void;
+	/**
+	 * Add item to cart
+	 * @param item - Product to add
+	 */
+	addToCart(item: IProduct): void;
 
-    /** 
-     * Remove item from cart
-     * @param id - Product ID to remove
-     */
-    removeFromCart(id: string): void;
+	/**
+	 * Remove item from cart
+	 * @param id - Product ID to remove
+	 */
+	removeFromCart(id: string): void;
 
-    /** 
-     * Get cart contents
-     * @returns Array of cart items
-     */
-    getCart(): ICart;
+	/**
+	 * Get cart contents
+	 * @returns Array of cart items
+	 */
+	getCart(): ICart;
 }
 
 /**
@@ -1266,29 +1282,29 @@ class AppState extends EventEmitter {
  * - Payment processing
  */
 class OrderModel extends EventEmitter {
-    /** Order data */
-    private _data: IOrderForm;
-    /** Validation errors */
-    private _errors: ValidationErrors = {};
+	/** Order data */
+	private _data: IOrderForm;
+	/** Validation errors */
+	private _errors: ValidationErrors = {};
 
-    /** 
-     * @param api - API interaction instance
-     */
-    constructor(api: Api);
+	/**
+	 * @param api - API interaction instance
+	 */
+	constructor(api: Api);
 
-    /** 
-     * Validate order form
-     * @param form - Form data to validate
-     * @returns Validation errors object
-     */
-    validate(form: IOrderForm): ValidationErrors;
+	/**
+	 * Validate order form
+	 * @param form - Form data to validate
+	 * @returns Validation errors object
+	 */
+	validate(form: IOrderForm): ValidationErrors;
 
-    /** 
-     * Submit order
-     * @param form - Order form data
-     * @returns Promise with server response
-     */
-    async submit(form: IOrderForm): Promise<IOrderResponse>;
+	/**
+	 * Submit order
+	 * @param form - Order form data
+	 * @returns Promise with server response
+	 */
+	async submit(form: IOrderForm): Promise<IOrderResponse>;
 }
 ```
 
@@ -1302,29 +1318,29 @@ class OrderModel extends EventEmitter {
  * - Handling product actions
  */
 class ProductCard extends TemplatedComponent<IProduct> {
-    /** Add to cart button */
-    protected _button: HTMLButtonElement;
-    /** Product title element */
-    protected _title: HTMLElement;
-    /** Price element */
-    protected _price: HTMLElement;
-    /** Image element */
-    protected _image: HTMLImageElement;
+	/** Add to cart button */
+	protected _button: HTMLButtonElement;
+	/** Product title element */
+	protected _title: HTMLElement;
+	/** Price element */
+	protected _price: HTMLElement;
+	/** Image element */
+	protected _image: HTMLImageElement;
 
-    /** 
-     * @param container - DOM element for card
-     * @param template - Card HTML template
-     */
-    constructor(container: HTMLElement, template: HTMLTemplateElement);
+	/**
+	 * @param container - DOM element for card
+	 * @param template - Card HTML template
+	 */
+	constructor(container: HTMLElement, template: HTMLTemplateElement);
 
-    /** 
-     * Render product card
-     * @param data - Product data
-     */
-    render(data: IProduct): void;
+	/**
+	 * Render product card
+	 * @param data - Product data
+	 */
+	render(data: IProduct): void;
 
-    /** Card click handler */
-    protected handleClick(): void;
+	/** Card click handler */
+	protected handleClick(): void;
 }
 
 /**
@@ -1335,30 +1351,30 @@ class ProductCard extends TemplatedComponent<IProduct> {
  * - Showing total amount
  */
 class CartView extends TemplatedComponent<ICart> {
-    /** Items list */
-    protected _list: HTMLElement;
-    /** Total amount element */
-    protected _total: HTMLElement;
-    /** Checkout button */
-    protected _button: HTMLButtonElement;
+	/** Items list */
+	protected _list: HTMLElement;
+	/** Total amount element */
+	protected _total: HTMLElement;
+	/** Checkout button */
+	protected _button: HTMLButtonElement;
 
-    /** 
-     * @param container - DOM element for cart
-     * @param template - Cart HTML template
-     */
-    constructor(container: HTMLElement, template: HTMLTemplateElement);
+	/**
+	 * @param container - DOM element for cart
+	 * @param template - Cart HTML template
+	 */
+	constructor(container: HTMLElement, template: HTMLTemplateElement);
 
-    /** 
-     * Render cart
-     * @param cart - Array of cart items
-     */
-    render(cart: ICart): void;
+	/**
+	 * Render cart
+	 * @param cart - Array of cart items
+	 */
+	render(cart: ICart): void;
 
-    /** 
-     * Update total amount
-     * @param total - New total
-     */
-    protected updateTotal(total: number): void;
+	/**
+	 * Update total amount
+	 * @param total - New total
+	 */
+	protected updateTotal(total: number): void;
 }
 
 /**
@@ -1369,29 +1385,29 @@ class CartView extends TemplatedComponent<ICart> {
  * - Form submission
  */
 class OrderForm extends Form<IOrderForm> {
-    /** Email field */
-    protected _email: HTMLInputElement;
-    /** Phone field */
-    protected _phone: HTMLInputElement;
-    /** Address field */
-    protected _address: HTMLInputElement;
-    /** Payment method radio buttons */
-    protected _payment: NodeListOf<HTMLInputElement>;
+	/** Email field */
+	protected _email: HTMLInputElement;
+	/** Phone field */
+	protected _phone: HTMLInputElement;
+	/** Address field */
+	protected _address: HTMLInputElement;
+	/** Payment method radio buttons */
+	protected _payment: NodeListOf<HTMLInputElement>;
 
-    /** 
-     * @param container - Order HTML form
-     * @param validator - Validator instance
-     */
-    constructor(container: HTMLFormElement, validator: ValidationModel);
+	/**
+	 * @param container - Order HTML form
+	 * @param validator - Validator instance
+	 */
+	constructor(container: HTMLFormElement, validator: ValidationModel);
 
-    /** 
-     * Render form
-     * @param data - Initial form data
-     */
-    render(data?: IOrderForm): void;
+	/**
+	 * Render form
+	 * @param data - Initial form data
+	 */
+	render(data?: IOrderForm): void;
 
-    /** Form submission handler */
-    protected handleSubmit(): void;
+	/** Form submission handler */
+	protected handleSubmit(): void;
 }
 
 /**
@@ -1402,32 +1418,32 @@ class OrderForm extends Form<IOrderForm> {
  * - Handling window actions
  */
 class Modal extends Component<HTMLElement> {
-    /** Close button */
-    protected _closeButton: HTMLElement;
-    /** Content container */
-    protected _content: HTMLElement;
-    /** Open state flag */
-    protected _isOpen: boolean = false;
+	/** Close button */
+	protected _closeButton: HTMLElement;
+	/** Content container */
+	protected _content: HTMLElement;
+	/** Open state flag */
+	protected _isOpen: boolean = false;
 
-    /** 
-     * @param container - DOM element for modal
-     */
-    constructor(container: HTMLElement);
+	/**
+	 * @param container - DOM element for modal
+	 */
+	constructor(container: HTMLElement);
 
-    /** 
-     * Render content
-     * @param content - HTML element to display
-     */
-    render(content: HTMLElement): void;
+	/**
+	 * Render content
+	 * @param content - HTML element to display
+	 */
+	render(content: HTMLElement): void;
 
-    /** Open modal window */
-    open(): void;
+	/** Open modal window */
+	open(): void;
 
-    /** Close modal window */
-    close(): void;
+	/** Close modal window */
+	close(): void;
 
-    /** Close handler */
-    protected handleClose(): void;
+	/** Close handler */
+	protected handleClose(): void;
 }
 
 /**
@@ -1437,21 +1453,21 @@ class Modal extends Component<HTMLElement> {
  * - Managing cart button
  */
 class HeaderView extends Component<number> {
-    /** Items counter */
-    protected _counter: HTMLElement;
-    /** Cart button */
-    protected _button: HTMLButtonElement;
+	/** Items counter */
+	protected _counter: HTMLElement;
+	/** Cart button */
+	protected _button: HTMLButtonElement;
 
-    /** 
-     * @param container - DOM element for header
-     */
-    constructor(container: HTMLElement);
+	/**
+	 * @param container - DOM element for header
+	 */
+	constructor(container: HTMLElement);
 
-    /** 
-     * Render counter
-     * @param count - Number of items in cart
-     */
-    render(count: number): void;
+	/**
+	 * Render counter
+	 * @param count - Number of items in cart
+	 */
+	render(count: number): void;
 }
 ```
 
@@ -1728,48 +1744,48 @@ src/
 
 #### API Integration
 
-The project uses Api class for REST API interactions:
+The project uses the [Api class](#base-classes) for REST API interactions. This class provides a typed interface for making HTTP requests to the backend.
+
+Example usage:
 
 ```typescript
-/**
- * Api - Class for working with REST API
- * Responsible for:
- * - HTTP requests to server
- * - Response handling
- * - Error handling
- */
-class Api {
-	constructor(baseUrl: string, options?: RequestInit) {
-		// Initialization
-	}
+// Initialize API with base URL
+const api = new Api('https://api.example.com');
 
-	/**
-	 * GET request
-	 * @param uri - Request path
-	 * @returns Promise with data
-	 */
-	async get(uri: string): Promise<object> {
-		// GET implementation
-	}
+// Fetch product catalog
+const products = await api.get<IProduct[]>('/products');
 
-	/**
-	 * POST request
-	 * @param uri - Request path
-	 * @param data - Data to send
-	 * @returns Promise with response
-	 */
-	async post(uri: string, data: object): Promise<object> {
-		// POST implementation
+// Submit an order
+const orderResponse = await api.post<IOrderResponse>('/orders', {
+	items: cart,
+	customer: orderData,
+});
+```
+
+The Api class automatically handles:
+
+- Type safety through generics
+- JSON serialization/deserialization
+- HTTP error responses
+- Request headers
+- Base URL configuration
+
+Error handling example:
+
+```typescript
+try {
+	const response = await api.post<IOrderResponse>('/orders', orderData);
+	// Handle success
+} catch (error) {
+	if (error instanceof ApiError) {
+		// Handle specific API errors
+		console.error(`API Error ${error.code}: ${error.message}`);
+	} else {
+		// Handle network or other errors
+		console.error('Request failed:', error);
 	}
 }
 ```
-
-Automatically handles:
-
-- JSON conversion
-- HTTP errors
-- Request headers
-- Request parameters
 
 #### Implementation Features
 
