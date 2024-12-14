@@ -1,11 +1,16 @@
 /** Event system base types */
 type EventName = string | RegExp;
-type Subscriber = Function;
 
 /** Structure of emitted events */
 type EmitterEvent = {
 	eventName: string;
 	data: unknown;
+};
+
+export type AppError = {
+	message: string;
+	code?: number;
+	details?: unknown;
 };
 
 /**
@@ -161,4 +166,21 @@ export interface IAppState {
 	loading: boolean;
 	/** Array of application errors - cleared on successful operations */
 	errors: AppError[];
+}
+
+export interface IModalData {
+	content: HTMLElement;
+}
+
+export interface IOrder {
+	payment: 'card' | 'cash';
+	email: string;
+	phone: string;
+	address: string;
+	items: string[];
+}
+
+export interface INotification {
+	message: string;
+	type: 'success' | 'error';
 }
