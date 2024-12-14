@@ -27,10 +27,16 @@ export class Api {
 
 	protected handleResponse(response: Response): Promise<object> {
 		if (response.ok) return response.json();
-		else
-			return response
-				.json()
-				.then((data) => Promise.reject(data.error ?? response.statusText));
+		return response.json().then((data) => {
+			const errorMessage = data.error?.message || data.error || data.message || response.statusText;
+			console.error('API Error:', {
+				status: response.status,
+				statusText: response.statusText,
+				data,
+				errorMessage
+			});
+			throw new Error(errorMessage);
+		});
 	}
 
 	get(uri: string) {
@@ -41,6 +47,11 @@ export class Api {
 	}
 
 	post(uri: string, data: object, method: ApiPostMethods = 'POST') {
+		console.log('API Request:', {
+			url: this.baseUrl + uri,
+			method,
+			data
+		});
 		return fetch(this.baseUrl + uri, {
 			...this.options,
 			method,
@@ -57,6 +68,11 @@ export class Api {
 	}
 
 	orderProducts(order: IOrder) {
-		return this.post('/order', order) as Promise<{ id: string }>;
+		console.log('Raw order data:', JSON.stringify(order, null, 2));
+
+		return this.post('/order', order).then(response => {
+			console.log('API Response:', response);
+			return response as { id: string };
+		});
 	}
 }

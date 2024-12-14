@@ -40,6 +40,8 @@ export interface IProduct {
 export interface ICartItem extends IProduct {
 	/** Position/order of item in cart */
 	cartPosition: number;
+	/** Quantity of item in cart */
+	quantity?: number;
 }
 
 /** Cart data structure as an array of cart items */
@@ -177,6 +179,7 @@ export interface IOrder {
 	email: string;
 	phone: string;
 	address: string;
+	total: number;
 	items: string[];
 }
 

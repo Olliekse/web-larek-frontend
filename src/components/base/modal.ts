@@ -39,6 +39,7 @@ export class Modal extends View<IModalData> {
 	close(): void {
 		this.container.classList.remove('modal_active');
 		this.emit('modal:close');
+		this._content.innerHTML = '';
 	}
 
 	private handleOutsideClick(event: MouseEvent): void {

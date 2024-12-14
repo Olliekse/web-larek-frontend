@@ -79,4 +79,20 @@ export class Cart extends View<ICartItem[]> {
 
 		return element;
 	}
+
+	get items(): ICartItem[] {
+		return this.state;
+	}
+
+	set items(value: ICartItem[]) {
+		this.render(value);
+	}
+
+	get total(): number {
+		return this.state.reduce((sum, item) => sum + item.price, 0);
+	}
+
+	get isEmpty(): boolean {
+		return this.state.length === 0;
+	}
 }

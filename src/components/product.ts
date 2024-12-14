@@ -50,7 +50,51 @@ export class ProductDetails extends View<IProduct> {
 		this._image.alt = data.title;
 		this._description.textContent = data.description;
 		this._category.textContent = data.category;
-		this._price.textContent = `${data.price} синапсов`;
+		this._price.textContent = data.price ? `${data.price} синапсов` : 'Цена по запросу';
 		this._category.className = `card__category card__category_${data.category.toLowerCase()}`;
+	}
+
+	get title(): string {
+		return this._title.textContent || '';
+	}
+
+	set title(value: string) {
+		this._title.textContent = value;
+	}
+
+	get description(): string {
+		return this._description.textContent || '';
+	}
+
+	set description(value: string) {
+		this._description.textContent = value;
+	}
+
+	get price(): number | null {
+		const priceText = this._price.textContent;
+		if (!priceText) return null;
+		return parseInt(priceText.replace(/\D/g, ''));
+	}
+
+	set price(value: number) {
+		this._price.textContent = value ? `${value} синапсов` : 'Цена по запросу';
+	}
+
+	get category(): string {
+		return this._category.textContent || '';
+	}
+
+	set category(value: string) {
+		this._category.textContent = value;
+		this._category.className = `card__category card__category_${value.toLowerCase()}`;
+	}
+
+	get image(): string {
+		return this._image.src;
+	}
+
+	set image(value: string) {
+		this._image.src = value;
+		this._image.alt = this.title;
 	}
 }

@@ -10,14 +10,10 @@ import { OrderForm } from './components/order';
 import { ContactsForm } from './components/contacts';
 import { Api } from './utils/api';
 import { API_URL, CDN_URL } from './utils/constants';
-import { Notification } from './components/notification';
 const api = new Api(API_URL, CDN_URL);
 
 const modal = new Modal(ensureElement<HTMLElement>('#modal-container'));
 const catalog = new Catalog(ensureElement<HTMLElement>('.gallery'));
-
-const notification = new Notification(createElement('div'));
-document.body.appendChild(notification.element);
 
 const toggleLoader = (state: boolean) => {
 	document.body.classList.toggle('loading', state);
@@ -44,34 +40,35 @@ api
 		catalog.render(products);
 	})
 	.catch((error) => {
-		notification.render({
-			type: 'error',
-			message: 'Failed to load products',
-		});
+		console.error('Failed to load products:', error);
 	})
 	.finally(() => {
 		toggleLoader(false);
 	});
 
 cart.on('cart:checkout', () => {
-	orderData = {};
 	const orderForm = new OrderForm(createElement('div'));
 
 	orderForm.on(
 		'order:submit',
-		(formData: { payment: 'card' | 'cash'; address: string }) => {
+		(formData: { payment: string; address: string }) => {
 			const contactsForm = new ContactsForm(createElement('div'));
 
 			contactsForm.on(
 				'contacts:submit',
 				(contactsData: { email: string; phone: string }) => {
+					const total = cartItems.reduce((sum, item) => sum + item.price, 0);
+
 					const fullOrderData: IOrder = {
-						payment: formData.payment,
-						address: formData.address,
+						payment: formData.payment as 'card' | 'cash',
 						email: contactsData.email,
 						phone: contactsData.phone,
+						address: formData.address,
+						total,
 						items: cartItems.map((item) => item.id),
 					};
+
+					console.log('Sending order:', fullOrderData);
 
 					toggleLoader(true);
 					api
@@ -80,20 +77,34 @@ cart.on('cart:checkout', () => {
 							cartItems.length = 0;
 							cart.render(cartItems);
 							localStorage.removeItem('cart');
-
 							updateCartCounter();
 
-							modal.close();
-							notification.render({
-								type: 'success',
-								message: 'Order placed successfully!',
-							});
+							const successTemplate =
+								ensureElement<HTMLTemplateElement>('#success');
+							const successContent = successTemplate.content.cloneNode(
+								true
+							) as HTMLElement;
+
+							const totalElement = successContent.querySelector(
+								'.order-success__description'
+							);
+							if (totalElement) {
+								totalElement.textContent = `Списано ${total} синапсов`;
+							}
+
+							const closeButton = successContent.querySelector(
+								'.order-success__close'
+							);
+							if (closeButton) {
+								closeButton.addEventListener('click', () => {
+									modal.close();
+								});
+							}
+
+							modal.render({ content: successContent });
 						})
-						.catch(error => {
-							notification.render({
-								type: 'error',
-								message: 'Failed to place order',
-							});
+						.catch((error) => {
+							console.error('Order submission failed:', error);
 						})
 						.finally(() => {
 							toggleLoader(false);
@@ -114,10 +125,14 @@ catalog.on('card:select', (product: IProduct) => {
 	details.render(product);
 
 	details.on('product:add', (product: IProduct) => {
+		console.log('Adding product to cart:', JSON.stringify(product, null, 2));
+
 		const cartItem: ICartItem = {
 			...product,
 			cartPosition: cartItems.length + 1,
 		};
+
+		console.log('Created cart item:', JSON.stringify(cartItem, null, 2));
 
 		cartItems.push(cartItem);
 		cart.render(cartItems);
@@ -148,30 +163,4 @@ cart.on('cart:remove', (item: ICartItem) => {
 
 catalog.on('card:select', (product: IProduct) => {
 	console.log('Selected product:', product);
-});
-
-let orderData: Partial<IOrderForm> = {};
-
-const contactsForm = new ContactsForm(createElement('div'));
-
-contactsForm.on('contacts:submit', (contactsData: Partial<IOrderForm>) => {
-	orderData = { ...orderData, ...contactsData };
-
-	const orderItems = cartItems.map((item) => item.id);
-	api
-		.orderProducts({
-			...(orderData as IOrderForm),
-			items: orderItems,
-		})
-		.then(() => {
-			cartItems.length = 0;
-			cart.render(cartItems);
-
-			const success = ensureElement<HTMLTemplateElement>('#success');
-			const successContent = success.content.cloneNode(true) as HTMLElement;
-			modal.render({ content: successContent });
-		})
-		.catch((error) => {
-			console.error('Order failed:', error);
-		});
 });

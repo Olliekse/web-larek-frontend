@@ -3,7 +3,7 @@ import { IOrderForm } from '../types';
 import { ensureElement } from '../utils/utils';
 import { formatPhone } from '../utils/mask';
 
-export class ContactsForm extends View<IOrderForm> {
+export class ContactsForm extends View<{ email: string; phone: string }> {
 	private static template = ensureElement<HTMLTemplateElement>('#contacts');
 
 	private _emailInput: HTMLInputElement;
@@ -84,5 +84,27 @@ export class ContactsForm extends View<IOrderForm> {
 			email: this._emailInput.value.trim(),
 			phone: this._phoneInput.value.trim(),
 		});
+	}
+
+	get email(): string {
+		return this._emailInput.value;
+	}
+
+	set email(value: string) {
+		this._emailInput.value = value;
+		this.validateForm();
+	}
+
+	get phone(): string {
+		return this._phoneInput.value;
+	}
+
+	set phone(value: string) {
+		this._phoneInput.value = value;
+		this.validateForm();
+	}
+
+	get isValid(): boolean {
+		return this.validateEmail(this.email) && this.validatePhone(this.phone);
 	}
 }

@@ -14,12 +14,7 @@ export class Catalog extends View<IProduct[]> {
 		this.container.innerHTML = '';
 
 		this._products = data.map((product) => {
-			const productContainer = createElement<HTMLElement>('div', {
-				className: 'gallery__item',
-			});
-			this.container.append(productContainer);
-
-			const card = new ProductCard(productContainer);
+			const card = new ProductCard(this.container);
 			card.render(product);
 
 			card.on('card:select', (product: IProduct) => {
