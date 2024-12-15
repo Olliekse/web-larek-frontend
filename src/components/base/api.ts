@@ -15,8 +15,8 @@ export class Api {
 	protected options: RequestInit;
 
 	constructor(baseUrl: string, cdn: string, options: RequestInit = {}) {
-		this.baseUrl = baseUrl;
-		this.cdn = cdn;
+		this.baseUrl = 'https://larek-api.nomoreparties.co/api/weblarek';
+		this.cdn = 'https://larek-api.nomoreparties.co';
 		this.options = {
 			headers: {
 				'Content-Type': 'application/json',
@@ -44,7 +44,10 @@ export class Api {
 	}
 
 	get(uri: string) {
-		return fetch(this.baseUrl + uri, {
+		const url =
+			'https://larek-api.nomoreparties.co/api/weblarek' +
+			(uri.startsWith('/') ? uri : '/' + uri);
+		return fetch(url, {
 			...this.options,
 			method: 'GET',
 		}).then(this.handleResponse);
@@ -61,7 +64,11 @@ export class Api {
 		return this.get('/product').then((data: ApiListResponse<IProduct>) => {
 			return data.items.map((item) => ({
 				...item,
-				image: this.cdn + item.image,
+
+				image:
+					this.cdn +
+					'/content/weblarek' +
+					(item.image.startsWith('/') ? item.image : '/' + item.image),
 			}));
 		});
 	}

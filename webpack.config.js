@@ -23,10 +23,7 @@ const config = {
 	output: {
 		path: path.resolve(__dirname, 'dist'),
 		publicPath: isProduction ? '/web-larek-frontend/' : '/',
-		filename: '[name].[contenthash].js',
 	},
-	publicPath:
-		process.env.NODE_ENV === 'production' ? '/web-larek-frontend/' : '/',
 	devServer: {
 		open: true,
 		host: 'localhost',
@@ -36,11 +33,9 @@ const config = {
 	plugins: [
 		new HtmlWebpackPlugin({
 			template: 'src/pages/index.html',
-			filename: 'index.html',
-			publicPath: isProduction ? '/web-larek-frontend/' : '/',
 		}),
 
-		new MiniCssExtractPlugin({ filename: '[name].[contenthash].css' }),
+		new MiniCssExtractPlugin(),
 
 		// Add your plugins here
 		// Learn more about plugins from https://webpack.js.org/configuration/plugins/
