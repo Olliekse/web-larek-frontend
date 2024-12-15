@@ -1,5 +1,8 @@
 # Web Larek Frontend
 
+![UML](https://github.com/user-attachments/assets/675436e7-df6d-455b-a2d7-b33e98deacd4)
+
+
 ## Содержание
 
 1. [Описание проекта](#описание-проекта)
