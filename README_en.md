@@ -10,8 +10,9 @@
 3. [Data Description](#data-description)
    - [Data Interfaces](#data-interfaces)
    - [Data Models](#data-models)
-     - [AppModel](#appmodel)
      - [CartModel](#cartmodel)
+		 - [ApiModel](#apimodel)
+		 
 4. [View Components](#view-components)
    - [Base Components](#base-components)
      - [EventEmitter](#eventemitter)
@@ -110,7 +111,7 @@ class Cart extends View<ICartItem[]> {
 }
 ```
 
-#### API
+#### ApiModel
 
 Handles all server communication:
 
