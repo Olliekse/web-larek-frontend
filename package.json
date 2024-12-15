@@ -2,6 +2,7 @@
   "name": "my-webpack-project",
   "version": "1.0.0",
   "main": "index.js",
+  "homepage": "https://olliekse.github.io/web-larek-frontend",
   "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.21.5",
