@@ -2,13 +2,13 @@ import './scss/styles.scss';
 
 import { Modal } from './components/base/modal';
 import { Catalog } from './components/catalog';
-import { ProductDetails } from './components/product';
-import { ICartItem, IProduct, IOrderForm, IOrder } from './types';
+import { ProductDetails } from './components/ProductDetails';
+import { ICartItem, IProduct, IOrder } from './types';
 import { createElement, ensureElement } from './utils/utils';
 import { Cart } from './components/cart';
 import { OrderForm } from './components/order';
 import { ContactsForm } from './components/contacts';
-import { Api } from './utils/api';
+import { Api } from './components/base/api';
 import { API_URL, CDN_URL } from './utils/constants';
 const api = new Api(API_URL, CDN_URL);
 
@@ -68,7 +68,7 @@ cart.on('cart:checkout', () => {
 						items: cartItems.map((item) => item.id),
 					};
 
-					console.log('Sending order:', fullOrderData);
+					
 
 					toggleLoader(true);
 					api
@@ -125,14 +125,14 @@ catalog.on('card:select', (product: IProduct) => {
 	details.render(product);
 
 	details.on('product:add', (product: IProduct) => {
-		console.log('Adding product to cart:', JSON.stringify(product, null, 2));
+		
 
 		const cartItem: ICartItem = {
 			...product,
 			cartPosition: cartItems.length + 1,
 		};
 
-		console.log('Created cart item:', JSON.stringify(cartItem, null, 2));
+	
 
 		cartItems.push(cartItem);
 		cart.render(cartItems);
@@ -159,8 +159,4 @@ cart.on('cart:remove', (item: ICartItem) => {
 
 		updateCartCounter();
 	}
-});
-
-catalog.on('card:select', (product: IProduct) => {
-	console.log('Selected product:', product);
 });

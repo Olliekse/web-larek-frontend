@@ -46,6 +46,8 @@ export class Cart extends View<ICartItem[]> {
 		this._list.innerHTML = '';
 		this.saveCart();
 
+		this._button.disabled = items.length === 0;
+
 		items.forEach((item, index) => {
 			const itemElement = this.createCardItem(item, index + 1);
 			this._list.append(itemElement);

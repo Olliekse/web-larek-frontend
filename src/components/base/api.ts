@@ -1,6 +1,6 @@
-import { IProduct } from "../types";
+import { IProduct } from '../../types';
 
-import { IOrder } from '../types';
+import { IOrder } from '../../types';
 
 export type ApiListResponse<Type> = {
 	total: number;
@@ -28,12 +28,16 @@ export class Api {
 	protected handleResponse(response: Response): Promise<object> {
 		if (response.ok) return response.json();
 		return response.json().then((data) => {
-			const errorMessage = data.error?.message || data.error || data.message || response.statusText;
+			const errorMessage =
+				data.error?.message ||
+				data.error ||
+				data.message ||
+				response.statusText;
 			console.error('API Error:', {
 				status: response.status,
 				statusText: response.statusText,
 				data,
-				errorMessage
+				errorMessage,
 			});
 			throw new Error(errorMessage);
 		});
@@ -47,11 +51,6 @@ export class Api {
 	}
 
 	post(uri: string, data: object, method: ApiPostMethods = 'POST') {
-		console.log('API Request:', {
-			url: this.baseUrl + uri,
-			method,
-			data
-		});
 		return fetch(this.baseUrl + uri, {
 			...this.options,
 			method,
@@ -68,10 +67,7 @@ export class Api {
 	}
 
 	orderProducts(order: IOrder) {
-		console.log('Raw order data:', JSON.stringify(order, null, 2));
-
-		return this.post('/order', order).then(response => {
-			console.log('API Response:', response);
+		return this.post('/order', order).then((response) => {
 			return response as { id: string };
 		});
 	}
