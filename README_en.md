@@ -200,10 +200,11 @@ The models communicate with other parts of the application through the event sys
 
 #### ProductCard
 
-**Purpose**: Displays product information
+**Purpose**: Displays product information in catalog
 **Constructor**:
 
 - `container: HTMLElement` - Card container element
+- Uses template: '#card-catalog'
 
 **Fields**:
 
@@ -211,12 +212,17 @@ The models communicate with other parts of the application through the event sys
 - `private _price: HTMLElement` - Price element
 - `private _category: HTMLElement` - Category element
 - `private _image: HTMLImageElement` - Product image element
-- `private _button: HTMLElement` - Action button
 
 **Methods**:
 
 - `render(data: IProduct): void` - Updates card display
-- `private handleClick(): void` - Handles card click events
+- `setCategory(value: string): void` - Updates category with styling
+- Getters/Setters for title, price, category, image
+
+**Events**:
+
+- `card:select` - Emitted when card is clicked
+  - Data: `IProduct` (product data)
 
 #### ProductDetails
 
@@ -354,7 +360,7 @@ The models communicate with other parts of the application through the event sys
 - `modal:close` - Emitted when modal closes
   - Data: `void`
 
-#### ProductCard Events
+#### Card Events
 
 - `card:click` - Emitted when product card is clicked
   - Data: `IProduct` (full product state)
@@ -383,7 +389,7 @@ The models communicate with other parts of the application through the event sys
 1. **Product Card Interaction**:
 
 ```typescript
-// From ProductCard.ts
+// From card.ts
 private handleClick(): void {
     this.emit('card:click', this.state);
 }
@@ -463,7 +469,6 @@ web-larek-frontend/
 │   │   ├── catalog.ts
 │   │   ├── contacts.ts
 │   │   ├── order.ts
-│   │   ├── ProductCard.ts
 │   │   └── ProductDetails.ts
 │   ├── images/             # Project images
 │   ├── pages/              # HTML pages

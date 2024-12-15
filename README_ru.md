@@ -199,25 +199,31 @@ class Api {
 
 ### UI компоненты
 
-#### ProductCard
+#### ProductCard (Карточка товара)
 
-**Назначение**: Отображает информацию о товаре
+**Назначение**: Отображает информацию о товаре в каталоге
 **Конструктор**:
 
 - `container: HTMLElement` - Контейнер карточки
+- Использует шаблон: '#card-catalog'
 
 **Поля**:
 
 - `private _title: HTMLElement` - Элемент заголовка
 - `private _price: HTMLElement` - Элемент цены
 - `private _category: HTMLElement` - Элемент категории
-- `private _image: HTMLImageElement` - Изображение товара
-- `private _button: HTMLElement` - Кнопка действия
+- `private _image: HTMLImageElement` - Элемент изображения товара
 
 **Методы**:
 
 - `render(data: IProduct): void` - Обновляет отображение карточки
-- `private handleClick(): void` - Обрабатывает события клика по карточке
+- `setCategory(value: string): void` - Обновляет стиль категории
+- Геттеры/сеттеры для title, price, category, image
+
+**События**:
+
+- `card:select` - Срабатывает при клике на карточку
+  - Data: `IProduct` (данные товара)
 
 #### ContactsForm
 
@@ -300,7 +306,7 @@ class Api {
 1. **Взаимодействие с карточкой товара**:
 
 ```typescript
-// Из ProductCard.ts
+// Из card.ts
 private handleClick(): void {
     this.emit('card:click', this.state);
 }
@@ -380,7 +386,6 @@ web-larek-frontend/
 │   │   ├── catalog.ts
 │   │   ├── contacts.ts
 │   │   ├── order.ts
-│   │   ├── ProductCard.ts
 │   │   └── ProductDetails.ts
 │   ├── images/             # Изображения проекта
 │   ├── pages/              # HTML страницы
