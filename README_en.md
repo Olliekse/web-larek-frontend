@@ -42,6 +42,8 @@
 
 A merchandise store for developers where users can spend "synapses" (virtual currency) on developer-themed items. Built using TypeScript and MVP architecture, featuring a responsive gallery, shopping cart functionality, and form validation.
 
+Live version: https://olliekse.github.io/web-larek-frontend/
+
 ## Architecture Overview
 
 This project implements the Model-View-Presenter (MVP) pattern with an event-driven approach. The application is divided into three main layers:
