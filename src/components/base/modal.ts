@@ -1,5 +1,3 @@
-// src/components/base/modal.ts
-
 import { View } from './view';
 import { ensureElement } from '../../utils/utils';
 
@@ -9,44 +7,66 @@ export interface IModalContent {
 }
 
 export class Modal extends View<IModalContent> {
-	private static template =
-		ensureElement<HTMLTemplateElement>('#modal-container');
 	private _closeButton: HTMLButtonElement;
 	private _content: HTMLElement;
 	private _title: HTMLElement;
+	private _modalContainer: HTMLElement;
 
 	constructor(container: HTMLElement) {
 		super(container);
 
-		const content = (
-			this.constructor as typeof Modal
-		).template.content.cloneNode(true) as HTMLElement;
-		this.container.append(content);
+		this._modalContainer =
+			container.querySelector('.modal__container') ||
+			document.createElement('div');
+		if (!this._modalContainer.parentElement) {
+			this._modalContainer.className = 'modal__container';
+			container.append(this._modalContainer);
+		}
 
-		this._closeButton = ensureElement<HTMLButtonElement>(
-			'.modal__close',
-			this.container
-		);
-		this._content = ensureElement<HTMLElement>(
-			'.modal__content',
-			this.container
-		);
-		this._title = ensureElement<HTMLElement>('.modal__title', this.container);
+		this._content =
+			this._modalContainer.querySelector('.modal__content') ||
+			document.createElement('div');
+		if (!this._content.parentElement) {
+			this._content.className = 'modal__content';
+			this._modalContainer.append(this._content);
+		}
+
+		this._title =
+			this._modalContainer.querySelector('.modal__title') ||
+			document.createElement('h3');
+		if (!this._title.parentElement) {
+			this._title.className = 'modal__title';
+			this._modalContainer.insertBefore(this._title, this._content);
+		}
+
+		this._closeButton =
+			this._modalContainer.querySelector('.modal__close') ||
+			document.createElement('button');
+		if (!this._closeButton.parentElement) {
+			this._closeButton.className = 'modal__close';
+			this._closeButton.type = 'button';
+			this._modalContainer.append(this._closeButton);
+		}
 
 		this._closeButton.addEventListener('click', () => this.close());
-		this.container.addEventListener(
-			'click',
-			this.handleOutsideClick.bind(this)
-		);
+		this.container.addEventListener('click', (event) => {
+			if (event.target === this.container) {
+				this.close();
+			}
+		});
 	}
 
 	render(data: IModalContent): void {
 		this._content.innerHTML = '';
 		this._content.append(data.content);
+		this._title.textContent = data.title || '';
 
-		if (data.title) {
-			this._title.textContent = data.title;
-		}
+		const priceElements = this._content.querySelectorAll('.card__price');
+		priceElements.forEach((element) => {
+			if (element.textContent?.includes('null')) {
+				element.textContent = 'Цена по запросу';
+			}
+		});
 	}
 
 	open(): void {
@@ -58,11 +78,5 @@ export class Modal extends View<IModalContent> {
 		this.container.classList.remove('modal_active');
 		this.emit('modal:close');
 		this._content.innerHTML = '';
-	}
-
-	private handleOutsideClick(event: MouseEvent): void {
-		if (event.target === this.container) {
-			this.close();
-		}
 	}
 }

@@ -39,7 +39,9 @@ export class ProductDetails extends View<IProduct> {
 		);
 
 		this._button.addEventListener('click', () => {
-			this.emit('product:add', this.state);
+			if (this.state.price) {
+				this.emit('product:add', this.state);
+			}
 		});
 	}
 
@@ -52,6 +54,14 @@ export class ProductDetails extends View<IProduct> {
 		this._category.textContent = data.category;
 		this._price.textContent = data.price ? `${data.price} синапсов` : 'Цена по запросу';
 		this._category.className = `card__category card__category_${data.category.toLowerCase()}`;
+		
+		if (!data.price) {
+			this._button.disabled = true;
+			this._button.textContent = 'Не продается';
+		} else {
+			this._button.disabled = false;
+			this._button.textContent = 'В корзину';
+		}
 	}
 
 	get title(): string {

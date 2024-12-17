@@ -2,7 +2,6 @@
 
 ![UML](https://github.com/user-attachments/assets/0acdb052-8928-4fe5-95eb-0c19601da76c)
 
-
 ## Table of Contents
 
 1. [Project Description](#project-description)
@@ -11,8 +10,7 @@
    - [Data Interfaces](#data-interfaces)
    - [Data Models](#data-models)
      - [CartModel](#cartmodel)
-		 - [ApiModel](#apimodel)
-		 
+     - [ApiModel](#apimodel)
 4. [View Components](#view-components)
    - [Base Components](#base-components)
      - [EventEmitter](#eventemitter)
@@ -184,31 +182,47 @@ The models communicate with other parts of the application through the event sys
 #### Modal
 
 **Purpose**: Handles modal window functionality with content and title management
+
 **Constructor**:
 
 - `container: HTMLElement` - Modal root element
+
+**Interface**:
+
+```typescript
+interface IModalContent {
+	content: HTMLElement;
+	title?: string;
+}
+```
 
 **Fields**:
 
 - `private _closeButton: HTMLButtonElement` - Close button element
 - `private _content: HTMLElement` - Content container element
 - `private _title: HTMLElement` - Title element
+- `private _modalContainer: HTMLElement` - Container for modal content structure
 
 **Methods**:
 
-- `render(data: IModalContent): void` - Updates modal content and title
-- `open(): void` - Opens modal
-- `close(): void` - Closes modal and cleans up content
-- `private handleOutsideClick(event: MouseEvent): void` - Handles clicks outside modal
+- `render(data: IModalContent): void` - Updates modal content and title, handles null price displays
+- `open(): void` - Opens modal and emits 'modal:open'
+- `close(): void` - Closes modal, cleans up content, and emits 'modal:close'
 
-**Interface**:
+**Events**:
 
-```typescript
-interface IModalContent {
-content: HTMLElement;
-title?: string;
-}
-```
+- `modal:open` - Emitted when modal opens
+- `modal:close` - Emitted when modal closes
+
+**Auto-close behavior**:
+
+- Closes when clicking the close button
+- Closes when clicking outside the modal content area
+
+**Initialization behavior**:
+
+- Dynamically creates missing modal structure elements if not found in container
+- Maintains proper element hierarchy: container > modal\_\_container > (title, content, close button)
 
 ### UI Components
 
