@@ -1,6 +1,7 @@
 # Web Larek Frontend
 
-![UML](https://github.com/user-attachments/assets/0acdb052-8928-4fe5-95eb-0c19601da76c)
+![UML](https://github.com/user-attachments/assets/93519c45-6d90-457e-9ef9-7ab77b39bebd)
+
 
 ## Table of Contents
 
@@ -38,6 +39,8 @@
 ## Project Description
 
 A merchandise store for developers where users can spend "synapses" (virtual currency) on developer-themed items. Built using TypeScript and MVP architecture, featuring a responsive gallery, shopping cart functionality, and form validation.
+
+Live version: https://olliekse.github.io/web-larek-frontend/
 
 ## Architecture Overview
 
