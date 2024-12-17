@@ -183,7 +183,7 @@ The models communicate with other parts of the application through the event sys
 
 #### Modal
 
-**Purpose**: Handles modal window functionality
+**Purpose**: Handles modal window functionality with content and title management
 **Constructor**:
 
 - `container: HTMLElement` - Modal root element
@@ -192,13 +192,23 @@ The models communicate with other parts of the application through the event sys
 
 - `private _closeButton: HTMLButtonElement` - Close button element
 - `private _content: HTMLElement` - Content container element
+- `private _title: HTMLElement` - Title element
 
 **Methods**:
 
+- `render(data: IModalContent): void` - Updates modal content and title
 - `open(): void` - Opens modal
-- `close(): void` - Closes modal
-- `setContent(content: HTMLElement): void` - Sets modal content
+- `close(): void` - Closes modal and cleans up content
 - `private handleOutsideClick(event: MouseEvent): void` - Handles clicks outside modal
+
+**Interface**:
+
+```typescript
+interface IModalContent {
+content: HTMLElement;
+title?: string;
+}
+```
 
 ### UI Components
 

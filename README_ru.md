@@ -182,7 +182,7 @@ class Api {
 
 #### Modal
 
-**Назначение**: Управляет функциональностью модального окна
+**Назначение**: Управляет функциональностью модального окна с содержимым и заголовком
 **Конструктор**:
 
 - `container: HTMLElement` - Корневой элемент модального окна
@@ -191,13 +191,23 @@ class Api {
 
 - `private _closeButton: HTMLButtonElement` - Кнопка закрытия
 - `private _content: HTMLElement` - Контейнер содержимого
+- `private _title: HTMLElement` - Элемент заголовка
 
 **Методы**:
 
+- `render(data: IModalContent): void` - Обновляет содержимое и заголовок модального окна
 - `open(): void` - Открывает модальное окно
-- `close(): void` - Закрывает модальное окно
-- `setContent(content: HTMLElement): void` - Устанавливает содержимое модального окна
+- `close(): void` - Закрывает модальное окно и очищает содержимое
 - `private handleOutsideClick(event: MouseEvent): void` - Обрабатывает клики вне модального окна
+
+**Интерфейс**:
+
+```typescript
+interface IModalContent {
+	content: HTMLElement;
+	title?: string;
+}
+```
 
 ### UI компоненты
 
