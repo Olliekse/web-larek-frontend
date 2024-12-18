@@ -70,12 +70,23 @@ export class Modal extends View<IModalContent> {
 	}
 
 	open(): void {
+		document.body.style.overflow = 'hidden';
+		document.querySelector('.page__wrapper')?.classList.add('page__wrapper_locked');
+		
+		const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+		this.container.style.top = `${scrollTop}px`;
+		
 		this.container.classList.add('modal_active');
 		this.emit('modal:open');
 	}
 
 	close(): void {
+		document.body.style.overflow = '';
+		document.querySelector('.page__wrapper')?.classList.remove('page__wrapper_locked');
+		
 		this.container.classList.remove('modal_active');
+		this.container.style.top = '';
+		
 		this.emit('modal:close');
 		this._content.innerHTML = '';
 	}

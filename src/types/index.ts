@@ -10,8 +10,9 @@ export interface IProduct {
 	title: string;
 	description: string;
 	category: string;
-	price: number;
+	price: number | null;
 	image: string;
+	inCart?: boolean;
 }
 
 export interface ICartItem extends IProduct {

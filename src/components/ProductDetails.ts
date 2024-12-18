@@ -52,12 +52,27 @@ export class ProductDetails extends View<IProduct> {
 		this._image.alt = data.title;
 		this._description.textContent = data.description;
 		this._category.textContent = data.category;
-		this._price.textContent = data.price ? `${data.price} синапсов` : 'Цена по запросу';
-		this._category.className = `card__category card__category_${data.category.toLowerCase()}`;
+		this._price.textContent = data.price ? `${data.price} синапсов` : 'Бесценно';
+
+		const categoryClasses: { [key: string]: string } = {
+			'софт-скил': 'soft',
+			'хард-скил': 'hard',
+			'другое': 'other',
+			'дополнительное': 'additional',
+			'кнопка': 'button'
+		};
+
+		const categoryClass = categoryClasses[data.category.toLowerCase()] || data.category.toLowerCase();
+		this._category.className = `card__category card__category_${categoryClass}`;
+		
+		const isInCart = Boolean(data.inCart);
 		
 		if (!data.price) {
 			this._button.disabled = true;
 			this._button.textContent = 'Не продается';
+		} else if (isInCart) {
+			this._button.disabled = true;
+			this._button.textContent = 'В корзине';
 		} else {
 			this._button.disabled = false;
 			this._button.textContent = 'В корзину';
@@ -87,7 +102,7 @@ export class ProductDetails extends View<IProduct> {
 	}
 
 	set price(value: number) {
-		this._price.textContent = value ? `${value} синапсов` : 'Цена по запросу';
+		this._price.textContent = value ? `${value} синапсов` : 'Бесценно';
 	}
 
 	get category(): string {

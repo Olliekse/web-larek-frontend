@@ -53,7 +53,7 @@ export class ProductCard extends View<IProduct> {
 	}
 
 	set price(value: number) {
-		this._price.textContent = value ? `${value} синапсов` : 'Цена по запросу';
+		this._price.textContent = value ? `${value} синапсов` : 'Бесценно';
 	}
 
 	get category(): string {

@@ -7,6 +7,7 @@ export class OrderForm extends View<{ payment: string; address: string }> {
     private readonly _cashButton: HTMLButtonElement;
     private readonly _addressInput: HTMLInputElement;
     private readonly _submitButton: HTMLButtonElement;
+    private readonly _errorMessage: HTMLElement;
     private _paymentMethod: string | null = null;
 
     constructor(container: HTMLElement) {
@@ -20,16 +21,22 @@ export class OrderForm extends View<{ payment: string; address: string }> {
         this._addressInput = ensureElement<HTMLInputElement>('input[name="address"]', this.container);
         this._submitButton = ensureElement<HTMLButtonElement>('button[type="submit"]', this.container);
 
+        this._errorMessage = document.createElement('span');
+        this._errorMessage.className = 'modal__message';
+        this._submitButton.parentElement?.appendChild(this._errorMessage);
+
         this._cardButton.addEventListener('click', () => this.setPaymentMethod('card'));
         this._cashButton.addEventListener('click', () => this.setPaymentMethod('cash'));
         this._addressInput.addEventListener('input', () => this.validateForm());
 
         this.container.addEventListener('submit', (e: Event) => {
             e.preventDefault();
-            this.emit('order:submit', {
-                payment: this._paymentMethod,
-                address: this._addressInput.value
-            });
+            if (this.validateForm()) {
+                this.emit('order:submit', {
+                    payment: this._paymentMethod,
+                    address: this._addressInput.value
+                });
+            }
         });
     }
 
@@ -40,9 +47,22 @@ export class OrderForm extends View<{ payment: string; address: string }> {
         this.validateForm();
     }
 
-    private validateForm(): void {
-        const isValid = this._addressInput.value.trim().length > 0 && this._paymentMethod !== null;
-        this._submitButton.disabled = !isValid;
+    private validateForm(): boolean {
+        const address = this._addressInput.value.trim();
+
+        if (!address) {
+            this._errorMessage.textContent = 'Необходимо указать адрес доставки';
+            this._errorMessage.classList.add('modal__message_error');
+        } else if (!this._paymentMethod) {
+            this._errorMessage.textContent = 'Необходимо выбрать способ оплаты';
+            this._errorMessage.classList.add('modal__message_error');
+        } else {
+            this._errorMessage.textContent = '';
+            this._errorMessage.classList.remove('modal__message_error');
+        }
+
+        this._submitButton.disabled = !address || !this._paymentMethod;
+        return Boolean(address && this._paymentMethod);
     }
 
     render(data: { payment?: string; address?: string }): void {
@@ -76,6 +96,6 @@ export class OrderForm extends View<{ payment: string; address: string }> {
     }
 
     get isValid(): boolean {
-        return this.address.trim().length > 0 && this.payment !== null;
+        return this._addressInput.value.trim().length > 0 && this._paymentMethod !== null;
     }
 }

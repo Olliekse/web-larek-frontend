@@ -122,23 +122,30 @@ cart.on('cart:checkout', () => {
 
 catalog.on('card:select', (product: IProduct) => {
 	const details = new ProductDetails(createElement('div'));
-	details.render(product);
-
+	
+	// Check if product is in cart
+	const isInCart = cartItems.some(item => item.id === product.id);
+	
+	// Add cart status to product data
+	const productWithCartStatus = {
+		...product,
+		inCart: isInCart
+	};
+	
+	details.render(productWithCartStatus);
+	
 	details.on('product:add', (product: IProduct) => {
-		
-
 		const cartItem: ICartItem = {
 			...product,
 			cartPosition: cartItems.length + 1,
 		};
-
-	
 
 		cartItems.push(cartItem);
 		cart.render(cartItems);
 		modal.close();
 
 		updateCartCounter();
+		localStorage.setItem('cart', JSON.stringify(cartItems));
 	});
 
 	modal.render({ content: details.element });

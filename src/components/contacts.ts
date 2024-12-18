@@ -9,6 +9,7 @@ export class ContactsForm extends View<{ email: string; phone: string }> {
 	private _emailInput: HTMLInputElement;
 	private _phoneInput: HTMLInputElement;
 	private _submitButton: HTMLButtonElement;
+	private _errorMessage: HTMLElement;
 
 	constructor(container: HTMLElement) {
 		super(container);
@@ -31,10 +32,25 @@ export class ContactsForm extends View<{ email: string; phone: string }> {
 			this.container
 		);
 
+		// Create error message element
+		this._errorMessage = document.createElement('span');
+		this._errorMessage.className = 'modal__message';
+		// Insert after submit button
+		this._submitButton.parentElement?.appendChild(this._errorMessage);
+
 		this._emailInput.addEventListener('input', () => this.validateForm());
-		this._phoneInput.addEventListener('input', () => {
-			const value = this._phoneInput.value;
-			this._phoneInput.value = formatPhone(value);
+		this._phoneInput.addEventListener('input', (e) => {
+			const input = e.target as HTMLInputElement;
+			const value = input.value.replace(/\D+/g, '');
+			
+			// If more than 11 digits, truncate to first 11
+			if (value.length > 11) {
+				const truncatedValue = value.slice(0, 11);
+				this._phoneInput.value = formatPhone(truncatedValue);
+				return;
+			}
+			
+			this._phoneInput.value = formatPhone(input.value);
 			this.validateForm();
 		});
 		this.container.addEventListener('submit', (e) => this.handleSubmit(e));
@@ -49,20 +65,40 @@ export class ContactsForm extends View<{ email: string; phone: string }> {
 		const email = this._emailInput.value.trim();
 		const phone = this._phoneInput.value.trim();
 
-		const isEmailValid = this.validateEmail(email);
-		const isPhoneValid = this.validatePhone(phone);
+		// Reset error states
+		this._errorMessage.textContent = '';
+		this._errorMessage.classList.remove('modal__message_error');
+		this._emailInput.classList.remove('input_invalid');
+		this._phoneInput.classList.remove('input_invalid');
 
-		this._emailInput.classList.toggle(
-			'input_invalid',
-			!isEmailValid && email.length > 0
-		);
-		this._phoneInput.classList.toggle(
-			'input_invalid',
-			!isPhoneValid && phone.length > 0
-		);
+		const errors: string[] = [];
 
-		const isValid = isEmailValid && isPhoneValid;
-		this._submitButton.disabled = !isValid;
+		// Email validation
+		if (!email) {
+			errors.push('Необходимо указать email');
+			this._emailInput.classList.add('input_invalid');
+		} else if (!this.validateEmail(email)) {
+			errors.push('Некорректный адрес электронной почты');
+			this._emailInput.classList.add('input_invalid');
+		}
+
+		// Phone validation
+		if (!phone) {
+			errors.push('Необходимо указать телефон');
+			this._phoneInput.classList.add('input_invalid');
+		} else if (!this.validatePhone(phone)) {
+			errors.push('Некорректный формат телефона');
+			this._phoneInput.classList.add('input_invalid');
+		}
+
+		// Show combined error messages if any
+		if (errors.length > 0) {
+			this._errorMessage.textContent = errors.join('; ');
+			this._errorMessage.classList.add('modal__message_error');
+		}
+
+		// Enable button if fields are not empty
+		this._submitButton.disabled = !email || !phone;
 
 		this.emit('contacts:change', {
 			email,
@@ -75,7 +111,8 @@ export class ContactsForm extends View<{ email: string; phone: string }> {
 	}
 
 	private validatePhone(phone: string): boolean {
-		return phone.length === 16;
+		// Changed to check for exactly 16 characters (format: +7 (XXX) XXX-XX-XX)
+		return /^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/.test(phone);
 	}
 
 	private handleSubmit(e: Event): void {

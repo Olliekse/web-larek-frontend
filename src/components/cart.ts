@@ -44,18 +44,22 @@ export class Cart extends View<ICartItem[]> {
 	render(items: ICartItem[]): void {
 		this.state = items;
 		this._list.innerHTML = '';
-		this.saveCart();
 
+		if (items.length === 0) {
+			const emptyMessage = document.createElement('div');
+			emptyMessage.textContent = 'Корзина пуста';
+			emptyMessage.style.textAlign = 'center';
+			emptyMessage.style.padding = '2rem';
+			this._list.append(emptyMessage);
+		} else {
+			items.forEach((item, index) => {
+				const itemElement = this.createCardItem(item, index + 1);
+				this._list.append(itemElement);
+			});
+		}
+
+		this._total.textContent = `${this.calculateTotal(items)} синапсов`;
 		this._button.disabled = items.length === 0;
-
-		items.forEach((item, index) => {
-			const itemElement = this.createCardItem(item, index + 1);
-			this._list.append(itemElement);
-		});
-
-		const total = this.calculateTotal(items);
-		this._total.textContent = `${total} синапсов`;
-		localStorage.setItem('cart', JSON.stringify(items));
 	}
 
 	private createCardItem(item: ICartItem, index: number): HTMLElement {
