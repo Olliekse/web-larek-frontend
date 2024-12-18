@@ -1,6 +1,7 @@
 # Web Larek Frontend
 
-![UML](https://github.com/user-attachments/assets/4f912602-78bb-4512-98d5-460273f8c0ce)
+![dLRBKjim5DtxAxGZ7W8Vu8RmQEaqCqt9D6at3CF8zYMebIrNkgPbW7-l7hAHKH9QLaJdFkuvHmzyef1AR2kUi1f1tj02oEpy3cfKv24XP5_KazLq10R9Y0ryeHMCIK4vpsdnCoEZaYBDo2ebHrDo9rYPPlQFgOQAOL2lKB9wFIQcubYN19awibw3t91S2Cti3-hyXQRAADSvwOQnoLEI59mgvMYUwz48ah2guL1PGQ6mWskmYupCQJC9X](https://github.com/user-attachments/assets/f8de452f-6b55-4452-8184-8fb2674b87d0)
+
 
 
 ## Содержание
