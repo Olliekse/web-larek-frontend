@@ -1,71 +1,92 @@
 import { createElement } from "../../utils/utils";
 import { IEvents } from "../base/events";
+import { IProduct } from "../../types";
+import { CartItemCard } from './CartItemCard';
 
 export interface ICart {
-  cart: HTMLElement;
-  title: HTMLElement;
-  cartList: HTMLElement;
-  button: HTMLButtonElement;
-  cartPrice: HTMLElement;
-  headerCartButton: HTMLButtonElement;
-  headerCartCounter: HTMLElement;
-  renderHeaderCartCounter(value: number): void;
-  renderSumAllProducts(sumAll: number): void;
-  render(): HTMLElement;
+    renderHeaderCartCounter(value: number): void;
+    renderSumAllProducts(sumAll: number): void;
+    render(): HTMLElement;
+    renderItems(items: IProduct[]): void;
 }
 
 export class Cart implements ICart {
-  cart: HTMLElement;
-  title: HTMLElement;
-  cartList: HTMLElement;
-  button: HTMLButtonElement;
-  cartPrice: HTMLElement;
-  headerCartButton: HTMLButtonElement;
-  headerCartCounter: HTMLElement;
-  
-  constructor(template: HTMLTemplateElement, protected events: IEvents) {
-    this.cart = template.content.querySelector('.basket').cloneNode(true) as HTMLElement;
-    this.title = this.cart.querySelector('.modal__title');
-    this.cartList = this.cart.querySelector('.basket__list');
-    this.button = this.cart.querySelector('.basket__button');
-    this.cartPrice = this.cart.querySelector('.basket__price');
-    this.headerCartButton = document.querySelector('.header__basket');
-    this.headerCartCounter = document.querySelector('.header__basket-counter');
-    
-    this.button.addEventListener('click', () => { this.events.emit('order:open') });
-    this.headerCartButton.addEventListener('click', () => { this.events.emit('cart:open') });
+    protected readonly elements: {
+        cart: HTMLElement;
+        title: HTMLElement;
+        list: HTMLElement;
+        button: HTMLButtonElement;
+        price: HTMLElement;
+        headerButton: HTMLButtonElement;
+        headerCounter: HTMLElement;
+    };
+    protected readonly itemTemplate: HTMLTemplateElement;
+    private cartElement: HTMLElement;
 
-    const savedCart = localStorage.getItem('cartProducts');
-    if (savedCart) {
-      const cartItems = JSON.parse(savedCart);
-      this.renderHeaderCartCounter(cartItems.length);
-    } else {
-      this.renderHeaderCartCounter(0);
+    constructor(
+        template: HTMLTemplateElement, 
+        protected events: IEvents,
+        itemTemplate: HTMLTemplateElement
+    ) {
+        this.itemTemplate = itemTemplate;
+        this.cartElement = template.content.querySelector('.basket').cloneNode(true) as HTMLElement;
+        
+        this.elements = {
+            cart: this.cartElement,
+            title: this.cartElement.querySelector('.modal__title'),
+            list: this.cartElement.querySelector('.basket__list'),
+            button: this.cartElement.querySelector('.basket__button'),
+            price: this.cartElement.querySelector('.basket__price'),
+            headerButton: document.querySelector('.header__basket'),
+            headerCounter: document.querySelector('.header__basket-counter')
+        };
+
+        this.elements.button.addEventListener('click', () => {
+            this.events.emit('order:open');
+        });
+        
+        this.elements.headerButton.addEventListener('click', () => {
+            this.events.emit('cart:open');
+        });
+
+        this.events.on('cart:update-counter', (data: { count: number }) => {
+            this.renderHeaderCartCounter(data.count);
+        });
     }
 
-    this.items = [];
-  }
+    renderItems(items: IProduct[]): void {
+        if (!items.length) {
+            this.elements.button.setAttribute('disabled', 'disabled');
+            this.elements.list.replaceChildren(
+                createElement<HTMLParagraphElement>('p', { 
+                    textContent: 'Корзина пуста' 
+                })
+            );
+            return;
+        }
 
-  set items(items: HTMLElement[]) {
-    if (items.length) {
-      this.cartList.replaceChildren(...items);
-      this.button.removeAttribute('disabled');
-    } else {
-      this.button.setAttribute('disabled', 'disabled');
-      this.cartList.replaceChildren(createElement<HTMLParagraphElement>('p', { textContent: 'Корзина пуста' }));
+        const cartItems = items.map((item, index) => {
+            const cartItem = new CartItemCard(this.itemTemplate, this.events, {
+                onClick: () => this.events.emit('cart:removeItem', item)
+            });
+            const element = cartItem.render(item);
+            cartItem.setIndex(index + 1);
+            return element;
+        });
+        
+        this.elements.list.replaceChildren(...cartItems);
+        this.elements.button.removeAttribute('disabled');
     }
-  }
 
-  renderHeaderCartCounter(value: number) {
-    this.headerCartCounter.textContent = String(value);
-  }
-  
-  renderSumAllProducts(sumAll: number) {
-    this.cartPrice.textContent = String(sumAll + ' синапсов');
-  }
+    render(): HTMLElement {
+        return this.cartElement;
+    }
 
-  render() {
-    this.title.textContent = 'Корзина';
-    return this.cart;
-  }
+    renderHeaderCartCounter(value: number): void {
+        this.elements.headerCounter.textContent = String(value);
+    }
+
+    renderSumAllProducts(sumAll: number): void {
+        this.elements.price.textContent = `${sumAll} синапсов`;
+    }
 }

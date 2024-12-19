@@ -17,17 +17,15 @@ export class ApiModel extends Api {
     this.cdn = cdn;
   }
 
-  // получаем массив объектов(карточек) с сервера
   getListProductCard(): Promise<IProduct[]> {
     return this.get('/product').then((data: ApiListResponse<IProduct>) =>
       data.items.map((item) => ({
         ...item,
-        image: this.cdn + item.image,
+        image: item.image.startsWith('http') ? item.image : this.cdn + item.image
       }))
     );
   }
 
-  // получаем ответ от сервера по сделанному заказу
   postOrderLot(order: IOrder): Promise<IOrder> {
     return this.post(`/order`, order).then((data: IOrder) => data);
   }

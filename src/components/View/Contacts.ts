@@ -5,7 +5,10 @@ export interface IContacts {
   inputAll: HTMLInputElement[];
   buttonSubmit: HTMLButtonElement;
   formErrors: HTMLElement;
+  valid: boolean;
+  error: string;
   render(): HTMLElement;
+  resetForm(): void;
 }
 
 export class Contacts implements IContacts {
@@ -13,6 +16,8 @@ export class Contacts implements IContacts {
   inputAll: HTMLInputElement[];
   buttonSubmit: HTMLButtonElement;
   formErrors: HTMLElement;
+  private _valid: boolean = false;
+  private _error: string = '';
 
   constructor(template: HTMLTemplateElement, protected events: IEvents) {
     this.formContacts = template.content.querySelector('.form').cloneNode(true) as HTMLFormElement;
@@ -20,13 +25,11 @@ export class Contacts implements IContacts {
     this.buttonSubmit = this.formContacts.querySelector('.button');
     this.formErrors = this.formContacts.querySelector('.form__errors');
 
-    // Initialize phone input
     const phoneInput = this.formContacts.querySelector('input[name="phone"]') as HTMLInputElement;
     phoneInput.value = '+7';
     
     phoneInput.addEventListener('input', this.handlePhoneInput.bind(this));
     
-    // Prevent deletion of +7 prefix
     phoneInput.addEventListener('keydown', (e) => {
         const input = e.target as HTMLInputElement;
         if (e.key === 'Backspace' && input.selectionStart <= 2) {
@@ -34,7 +37,6 @@ export class Contacts implements IContacts {
         }
     });
 
-    // Handle other inputs
     this.inputAll.forEach(item => {
         if (item.name !== 'phone') {
             item.addEventListener('input', (event) => {
@@ -49,7 +51,7 @@ export class Contacts implements IContacts {
 
     this.formContacts.addEventListener('submit', (event: Event) => {
         event.preventDefault();
-        this.events.emit('success:open');
+        this.events.emit('contacts:submit');
     });
   }
 
@@ -57,47 +59,63 @@ export class Contacts implements IContacts {
     const input = event.target as HTMLInputElement;
     const cursorPosition = input.selectionStart;
 
-    // Remove all non-digit characters except for the initial +7
     let value = input.value.replace(/\D/g, '');
     
-    // Limit to 11 digits (including the country code)
     if (value.length > 11) {
         value = value.slice(0, 11);
     }
 
-    // Format the phone number
     let formattedNumber = '+7';
     if (value.length > 1) {
-        formattedNumber += ' ' + value.slice(1, 4); // Area code
+        formattedNumber += ' ' + value.slice(1, 4);
     }
     if (value.length > 4) {
-        formattedNumber += ' ' + value.slice(4, 7); // First part of the number
+        formattedNumber += ' ' + value.slice(4, 7);
     }
     if (value.length > 7) {
-        formattedNumber += ' ' + value.slice(7, 9); // Second part of the number
+        formattedNumber += ' ' + value.slice(7, 9);
     }
     if (value.length > 9) {
-        formattedNumber += ' ' + value.slice(9); // Last part of the number
+        formattedNumber += ' ' + value.slice(9);
     }
 
     input.value = formattedNumber;
 
-    // Emit the change event with the formatted value
     this.events.emit(`contacts:changeInput`, { 
         field: input.name, 
         value: formattedNumber 
     });
 
-    // Set the cursor position after the last entered digit
-    const newCursorPosition = formattedNumber.length; // Set cursor to the end of the formatted number
+    const newCursorPosition = formattedNumber.length;
     input.setSelectionRange(newCursorPosition, newCursorPosition);
   }
 
+  get valid(): boolean {
+    return this._valid;
+  }
+
   set valid(value: boolean) {
+    this._valid = value;
     this.buttonSubmit.disabled = !value;
+  }
+
+  get error(): string {
+    return this._error;
+  }
+
+  set error(value: string) {
+    this._error = value;
+    this.formErrors.textContent = value;
   }
 
   render() {
     return this.formContacts
+  }
+
+  resetForm(): void {
+    this.formContacts.reset();
+    const phoneInput = this.formContacts.querySelector('input[name="phone"]') as HTMLInputElement;
+    phoneInput.value = '+7';
+    this.formErrors.textContent = '';
   }
 }

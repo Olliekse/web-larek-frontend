@@ -1,4 +1,5 @@
 import { IProduct } from "../../types/index";
+import { IEvents } from "../base/events";
 
 export interface ICartModel {
   cartProducts: IProduct[];
@@ -7,33 +8,39 @@ export interface ICartModel {
   setSelectedСard(data: IProduct): void;
   deleteCardToCart(item: IProduct): void;
   clearCartProducts(): void;
+  isProductInCart(productId: string): boolean;
 }
 
 export class CartModel implements ICartModel {
-  protected _cartProducts: IProduct[]; // список карточек товара в корзине
+  protected _cartProducts: IProduct[];
 
-  constructor() {
-    // Load cart data from localStorage on initialization
+  constructor(protected events: IEvents) {
     const savedCart = localStorage.getItem('cartProducts');
     this._cartProducts = savedCart ? JSON.parse(savedCart) : [];
+    
+    this.events.on('cart:state:get', () => {
+        this.events.emit('cart:changed', this._cartProducts);
+    });
+
+    this.events.on('cart:clear', () => {
+        this.clearCartProducts();
+    });
   }
 
   set cartProducts(data: IProduct[]) {
     this._cartProducts = data;
-    // Save to localStorage whenever cart is updated
     localStorage.setItem('cartProducts', JSON.stringify(this._cartProducts));
+    this.events.emit('cart:changed', this._cartProducts);
   }
 
   get cartProducts() {
     return this._cartProducts;
   }
 
-  // количество товара в корзине
   getCounter() {
     return this.cartProducts.length;
   }
 
-  // сумма всех товаров в корзине
   getSumAllProducts() {
     let sumAll = 0;
     this.cartProducts.forEach(item => {
@@ -42,26 +49,39 @@ export class CartModel implements ICartModel {
     return sumAll;
   }
 
-  // добавить карточку товара в корзину
   setSelectedСard(data: IProduct) {
-    this._cartProducts.push(data);
-    // Save after adding item
+    if (!this.isProductInCart(data.id)) {
+      this._cartProducts.push(data);
+      this.saveToLocalStorage();
+      this.events.emit('cart:changed', this._cartProducts);
+    }
+  }
+
+  private saveToLocalStorage(): void {
     localStorage.setItem('cartProducts', JSON.stringify(this._cartProducts));
   }
 
-  // удалить карточку товара из корзины
   deleteCardToCart(item: IProduct) {
     const index = this._cartProducts.indexOf(item);
     if (index >= 0) {
       this._cartProducts.splice(index, 1);
-      // Save after removing item
       localStorage.setItem('cartProducts', JSON.stringify(this._cartProducts));
+      this.events.emit('cart:changed', this._cartProducts);
     }
   }
 
   clearCartProducts() {
     this.cartProducts = [];
-    // Clear localStorage when cart is cleared
     localStorage.removeItem('cartProducts');
+    this.events.emit('cart:changed', []);
+    this.events.emit('cart:update-counter', { count: 0 });
+  }
+
+  isProductInCart(productId: string): boolean {
+    return this._cartProducts.some(item => item.id === productId);
+  }
+
+  getProductCount(): number {
+    return this._cartProducts.length;
   }
 }
