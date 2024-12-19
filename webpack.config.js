@@ -5,6 +5,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const { DefinePlugin } = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
+const webpack = require('webpack');
 
 require('dotenv').config({
 	path: path.join(
@@ -42,13 +43,17 @@ const config = {
 			'process.env.DEVELOPMENT': !isProduction,
 			'process.env.API_ORIGIN': JSON.stringify(process.env.API_ORIGIN ?? ''),
 		}),
+		new webpack.DefinePlugin({
+			'process.env.API_URL': JSON.stringify(''),
+			'process.env.API_CDN': JSON.stringify(''),
+		}),
 	],
 	module: {
 		rules: [
 			{
 				test: /\.(ts|tsx)$/i,
 				use: ['babel-loader', 'ts-loader'],
-				exclude: ['/node_modules/'],
+					exclude: ['/node_modules/'],
 			},
 			{
 				test: /\.s[ac]ss$/i,

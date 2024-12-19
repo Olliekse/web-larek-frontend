@@ -1,9 +1,3 @@
-declare global {
-    interface Window {
-        cartModel: import('../components/Model/CartModel').CartModel;
-    }
-}
-
 export interface IProduct {
     id: string;
     title: string;
@@ -20,4 +14,4 @@ export interface IOrder {
     address: string;
     total: number;
     items: string[];
-}
+} 
