@@ -1,7 +1,8 @@
-import { Card } from './Card';
+import { Card } from './CardView';
 import { IEvents } from '../base/events';
 import { IProduct } from '../../types';
 import { createElement } from '../../utils/utils';
+import { IDOMService } from '../../services/DOMService';
 
 export interface ICartItemCard {
 	title: string;
@@ -20,12 +21,13 @@ export class CartItemCard extends Card {
 	constructor(
 		container: HTMLElement,
 		protected events: IEvents,
+		protected domService: IDOMService,
 		protected actions?: { onClick: (event: MouseEvent) => void }
 	) {
 		const template = document.querySelector(
 			'#card-basket'
 		) as HTMLTemplateElement;
-		super(template, events);
+		super(template, events, domService);
 
 		this._container = createElement('div', {
 			className: 'basket__item card card_compact',

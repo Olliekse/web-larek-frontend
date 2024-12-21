@@ -1,6 +1,6 @@
 import { BasePresenter } from '../base/presenter';
 import { ICartModel } from '../Model/CartModel';
-import { ICart } from '../View/Cart';
+import { ICart } from '../View/CartView';
 import { IProduct } from '../../types';
 import { IEvents } from '../base/events';
 

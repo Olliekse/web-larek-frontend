@@ -1,5 +1,6 @@
 import { IProduct } from '../../types';
 import { IEvents } from '../base/events';
+import { IDOMService } from '../../services/DOMService';
 
 export interface IActions {
 	onClick: (event: MouseEvent) => void;
@@ -23,14 +24,17 @@ export class Card implements ICard {
 	constructor(
 		template: HTMLTemplateElement,
 		protected events: IEvents,
+		protected domService: IDOMService,
 		protected actions?: IActions
 	) {
 		this.elements = {
-				card: template.content.querySelector('.card').cloneNode(true) as HTMLElement,
-				category: null,
-				title: null,
-				image: null,
-				price: null
+			card: template.content
+				.querySelector('.card')
+				.cloneNode(true) as HTMLElement,
+			category: null,
+			title: null,
+			image: null,
+			price: null,
 		};
 
 		this.initializeElements();
@@ -50,15 +54,17 @@ export class Card implements ICard {
 
 	render(data: IProduct): HTMLElement {
 		const cardElement = this.elements.card.cloneNode(true) as HTMLElement;
-		
+
 		const category = cardElement.querySelector('.card__category');
 		const title = cardElement.querySelector('.card__title');
 		const image = cardElement.querySelector('.card__image') as HTMLImageElement;
 		const price = cardElement.querySelector('.card__price');
 
 		category.textContent = data.category;
-		category.className = `card__category card__category_${this.getCategoryClass(data.category)}`;
-		
+		category.className = `card__category card__category_${this.getCategoryClass(
+			data.category
+		)}`;
+
 		title.textContent = data.title;
 		image.src = data.image;
 		image.alt = data.title;
@@ -71,9 +77,9 @@ export class Card implements ICard {
 		const categoryMap: Record<string, string> = {
 			'софт-скил': 'soft',
 			'хард-скил': 'hard',
-			'другое': 'other',
-			'дополнительное': 'additional',
-			'кнопка': 'button'
+			другое: 'other',
+			дополнительное: 'additional',
+			кнопка: 'button',
 		};
 		return categoryMap[category as keyof typeof categoryMap] || 'other';
 	}

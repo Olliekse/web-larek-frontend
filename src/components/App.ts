@@ -2,10 +2,10 @@ import { EventEmitter } from './base/events';
 import { CartModel } from './Model/CartModel';
 import { FormModel } from './Model/FormModel';
 import { DataModel } from './Model/DataModel';
-import { Cart } from './View/Cart';
-import { Order } from './View/Order';
-import { Contacts } from './View/Contacts';
-import { CardPreview } from './View/CardPreview';
+import { Cart } from './View/CartView';
+import { Order } from './View/OrderView';
+import { Contacts } from './View/ContactsView';
+import { CardPreview } from './View/CardPreviewView';
 import { CartPresenter } from './Presenter/CartPresenter';
 import { OrderPresenter } from './Presenter/OrderPresenter';
 import { ContactsPresenter } from './Presenter/ContactsPresenter';
@@ -13,6 +13,7 @@ import { ProductPresenter } from './Presenter/ProductPresenter';
 import { ApiModel } from './Model/apiModel';
 import { ModalView } from './View/ModalView';
 import { ModalPresenter } from './Presenter/ModalPresenter';
+import { DOMService } from '../services/DOMService';
 
 export class App {
 	private cartPresenter: CartPresenter;
@@ -21,9 +22,11 @@ export class App {
 	private productPresenter: ProductPresenter;
 	private modalPresenter: ModalPresenter;
 	private readonly events: EventEmitter;
+	private readonly domService: DOMService;
 
 	constructor() {
 		this.events = new EventEmitter();
+		this.domService = new DOMService();
 		this.initializeApp();
 	}
 
@@ -57,10 +60,19 @@ export class App {
 		};
 
 		// Initialize views
-		const cartView = new Cart(templates.cart, this.events, templates.cartItem);
+		const cartView = new Cart(
+			templates.cart,
+			this.events,
+			this.domService,
+			templates.cartItem
+		);
 		const orderView = new Order(templates.order, this.events);
 		const contactsView = new Contacts(templates.contacts, this.events);
-		const cardView = new CardPreview(templates.card, this.events);
+		const cardView = new CardPreview(
+			templates.card,
+			this.events,
+			this.domService
+		);
 
 		// Initialize modal
 		const modalView = new ModalView(

@@ -1,10 +1,10 @@
 import { BasePresenter } from '../base/presenter';
 import { IDataModel } from '../Model/DataModel';
-import { ICard } from '../View/Card';
+import { ICard } from '../View/CardView';
 import { IProduct } from '../../types';
 import { IEvents } from '../base/events';
 import { ApiModel } from '../Model/apiModel';
-import { CardPreview } from '../View/CardPreview';
+import { CardPreview } from '../View/CardPreviewView';
 import { CartModel } from '../Model/CartModel';
 import { ICartModel } from '../Model/CartModel';
 
@@ -21,16 +21,18 @@ export class ProductPresenter extends BasePresenter {
 		super(events);
 		this.gallery = document.querySelector('.gallery');
 
-		this.events.on('card:addCart', this.handleAddToCart.bind(this));
-		this.events.on('cart:changed', this.updateGalleryState.bind(this));
-		this.events.on('productCards:receive', this.handleProductsReceived.bind(this));
-		this.events.on('card:select', this.handleCardSelect.bind(this));
-	}
+		this.events.on('card:addCart', (product: IProduct) => {
+			if (!this.cartModel.isProductInCart(product.id)) {
+				this.cartModel.setSelectedСard(product);
+			}
+		});
 
-	private handleAddToCart(product: IProduct): void {
-		if (!this.cartModel.isProductInCart(product.id)) {
-			this.cartModel.setSelectedСard(product);
-		}
+		this.events.on('cart:changed', this.updateGalleryState.bind(this));
+		this.events.on(
+			'productCards:receive',
+			this.handleProductsReceived.bind(this)
+		);
+		this.events.on('card:select', this.handleCardSelect.bind(this));
 	}
 
 	private updateGalleryState(): void {
@@ -55,12 +57,6 @@ export class ProductPresenter extends BasePresenter {
 	}
 
 	async init(): Promise<void> {
-		this.events.on('productCards:receive', this.handleProductsReceived.bind(this));
-		this.events.on('card:addCart', (product: IProduct) => {
-			this.events.emit('cart:addItem', product);
-			this.events.emit('cart:changed');
-		});
-
 		try {
 			const products = await this.api.getListProductCard();
 			this.model.productCards = products;
