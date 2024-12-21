@@ -14,6 +14,7 @@ import { ApiModel } from './Model/apiModel';
 import { ModalView } from './View/ModalView';
 import { ModalPresenter } from './Presenter/ModalPresenter';
 import { DOMService } from '../services/DOMService';
+import { StateService } from '../services/StateService';
 
 export class App {
 	private cartPresenter: CartPresenter;
@@ -23,10 +24,12 @@ export class App {
 	private modalPresenter: ModalPresenter;
 	private readonly events: EventEmitter;
 	private readonly domService: DOMService;
+	private readonly stateService: StateService;
 
 	constructor() {
 		this.events = new EventEmitter();
 		this.domService = new DOMService();
+		this.stateService = new StateService(this.events);
 		this.initializeApp();
 	}
 
@@ -101,7 +104,7 @@ export class App {
 			this.events
 		);
 		this.productPresenter = new ProductPresenter(
-			dataModel,
+			this.stateService,
 			cartModel,
 			cardView,
 			api,

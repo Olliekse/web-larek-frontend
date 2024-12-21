@@ -1,18 +1,16 @@
 import { BasePresenter } from '../base/presenter';
-import { IDataModel } from '../Model/DataModel';
-import { ICard } from '../View/CardView';
 import { IProduct } from '../../types';
 import { IEvents } from '../base/events';
 import { ApiModel } from '../Model/apiModel';
 import { CardPreview } from '../View/CardPreviewView';
-import { CartModel } from '../Model/CartModel';
 import { ICartModel } from '../Model/CartModel';
+import { StateService } from '../../services/StateService';
 
 export class ProductPresenter extends BasePresenter {
 	private gallery: HTMLElement;
 
 	constructor(
-		private model: IDataModel,
+		private stateService: StateService,
 		private cartModel: ICartModel,
 		private view: CardPreview,
 		private api: ApiModel,
@@ -21,29 +19,35 @@ export class ProductPresenter extends BasePresenter {
 		super(events);
 		this.gallery = document.querySelector('.gallery');
 
-		this.events.on('card:addCart', (product: IProduct) => {
-			if (!this.cartModel.isProductInCart(product.id)) {
-				this.cartModel.setSelectedСard(product);
-			}
-		});
-
-		this.events.on('cart:changed', this.updateGalleryState.bind(this));
 		this.events.on(
-			'productCards:receive',
+			'state:products:changed',
 			this.handleProductsReceived.bind(this)
 		);
-		this.events.on('card:select', this.handleCardSelect.bind(this));
+		this.events.on('state:cart:changed', this.updateGalleryState.bind(this));
+
+		this.events.on('card:select', (product: IProduct) => {
+			this.stateService.openModal(
+				this.view.renderModal(product),
+				product.title
+			);
+		});
+
+		this.events.on('card:addCart', (product: IProduct) => {
+			this.stateService.addToCart(product);
+			this.cartModel.setSelectedСard(product);
+		});
 	}
 
 	private updateGalleryState(): void {
-		this.model.productCards.forEach((product) => {
+		const cart = this.stateService.getCart();
+		this.stateService.getProducts().forEach((product) => {
 			const cardElement = this.gallery.querySelector(
 				`[data-product-id="${product.id}"]`
 			);
 			if (cardElement) {
 				const cardInstance = (cardElement as any).__cardInstance;
-				if (cardInstance && cardInstance.updateButtonState) {
-					const isInCart = this.cartModel.isProductInCart(product.id);
+				if (cardInstance?.updateButtonState) {
+					const isInCart = cart.items.some((item) => item.id === product.id);
 					cardInstance.updateButtonState(isInCart, product.price !== undefined);
 				}
 			}
@@ -59,7 +63,7 @@ export class ProductPresenter extends BasePresenter {
 	async init(): Promise<void> {
 		try {
 			const products = await this.api.getListProductCard();
-			this.model.productCards = products;
+			this.stateService.setProducts(products);
 		} catch (error) {
 			console.error('Failed to load products:', error);
 		}
@@ -72,15 +76,11 @@ export class ProductPresenter extends BasePresenter {
 		}
 
 		try {
-			const products = this.model.productCards;
+			const products = this.stateService.getProducts();
 			this.gallery.innerHTML = '';
 			products.forEach(this.renderProductCard.bind(this));
 		} catch (error) {
 			console.error('Error rendering products:', error);
 		}
-	}
-
-	private handleCardSelect(product: IProduct): void {
-		this.events.emit('modal:product:open', product);
 	}
 }
