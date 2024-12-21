@@ -1,50 +1,66 @@
 import { BasePresenter } from '../base/presenter';
-import { ICartModel } from '../Model/CartModel';
-import { ICart } from '../View/CartView';
-import { IProduct } from '../../types';
+import { ICart } from '../view/CartView';
 import { IEvents } from '../base/events';
+import { StateService } from '../../services/StateService';
+import { IProduct } from '../../types';
 
+interface CartState {
+	items: IProduct[];
+	total: number;
+}
+
+/** Presenter for handling shopping cart logic */
 export class CartPresenter extends BasePresenter {
-	constructor(private model: ICartModel, private view: ICart, events: IEvents) {
+	/**
+	 * Creates a new CartPresenter instance
+	 * @param stateService - Service for managing application state
+	 * @param view - Cart view instance
+	 * @param events - Event emitter instance
+	 */
+	constructor(
+		private stateService: StateService,
+		private view: ICart,
+		events: IEvents
+	) {
 		super(events);
-		this.events.on('cart:open', this.handleCartOpen.bind(this));
-		this.events.on('cart:removeItem', this.handleRemoveItem.bind(this));
-		this.events.on('cart:addItem', this.handleAddItem.bind(this));
-		this.events.on('cart:clear', () => {
-			this.model.clearCartProducts();
-			this.updateCart();
+
+		// Listen to state changes
+		this.events.on('state:cart:changed', (cartState: CartState) => {
+			this.view.renderItems(cartState.items);
+			this.view.renderHeaderCartCounter(cartState.items.length);
+			this.view.renderSumAllProducts(cartState.total);
 		});
 
-		const savedCart = localStorage.getItem('cartProducts');
-		if (savedCart) {
-			this.model.cartProducts = JSON.parse(savedCart);
-			this.updateCart();
+		// Handle cart opening
+		this.events.on('cart:open', () => {
+			const cart = this.stateService.getCart();
+			this.view.renderItems(cart.items);
+			this.view.renderSumAllProducts(cart.total);
+			this.events.emit('modal:open', {
+				content: this.view.render(),
+				title: 'Корзина',
+			});
+		});
+
+		// Initialize cart state
+		const cart = this.stateService.getCart();
+		if (cart.items.length) {
+			this.view.renderItems(cart.items);
+			this.view.renderHeaderCartCounter(cart.items.length);
+			this.view.renderSumAllProducts(cart.total);
 		}
-	}
 
-	private handleCartOpen(): void {
-		this.updateCart();
-		const content = this.view.render();
-
-		this.events.emit('modal:open', {
-			content: content,
-			title: 'Корзина',
+		// Handle item removal
+		this.events.on('cart:removeItem', (item: IProduct) => {
+			this.stateService.removeFromCart(item.id);
 		});
 	}
 
-	private handleAddItem(item: IProduct): void {
-		this.model.setSelectedСard(item);
-		this.updateCart();
-	}
-
-	private handleRemoveItem(item: IProduct): void {
-		this.model.deleteCardToCart(item);
-		this.updateCart();
-	}
-
-	private updateCart(): void {
-		this.view.renderItems(this.model.cartProducts);
-		this.view.renderHeaderCartCounter(this.model.getCounter());
-		this.view.renderSumAllProducts(this.model.getSumAllProducts());
+	/**
+	 * Initializes the cart presenter and updates header counter
+	 */
+	init(): void {
+		const cart = this.stateService.getCart();
+		this.view.renderHeaderCartCounter(cart.items.length);
 	}
 }

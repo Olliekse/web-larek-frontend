@@ -1,37 +1,35 @@
-import { IEvents } from '../base/events';
 import { BasePresenter } from '../base/presenter';
-import { IFormModel } from '../Model/FormModel';
-import { IOrder } from '../View/OrderView';
-import { IContacts } from '../View/ContactsView';
+import { IFormModel } from '../model/FormModel';
+import { IOrder } from '../view/OrderView';
+import { IContacts } from '../view/ContactsView';
+import { IEvents } from '../base/events';
+import { StateService } from '../../services/StateService';
 
+/** Manages order processing and submission */
 export class OrderPresenter extends BasePresenter {
 	constructor(
-		private model: IFormModel,
+		private formModel: IFormModel,
 		private view: IOrder,
 		private contactsView: IContacts,
+		private stateService: StateService,
 		events: IEvents
 	) {
 		super(events);
 
-		this.events.on('cart:clear', () => {
-			this.view.resetForm();
-			this.model.resetForm();
+		this.events.on('order:paymentSelection', (data: { payment: string }) => {
+			this.formModel.payment = data.payment;
+			this.validateOrder();
 		});
-	}
 
-	init(): void {
-		this.events.on(
-			'order:paymentSelection',
-			this.handlePaymentSelection.bind(this)
-		);
 		this.events.on('order:changeAddress', this.handleAddressChange.bind(this));
 		this.events.on('order:submit', this.handleSubmit.bind(this));
 		this.events.on('formErrors:address', this.handleFormErrors.bind(this));
-	}
 
-	private handlePaymentSelection(data: { payment: string }): void {
-		this.model.payment = data.payment;
-		this.validateOrder();
+		this.events.on('form:reset', () => {
+			this.formModel.resetForm();
+			this.view.resetForm();
+			this.contactsView.resetForm();
+		});
 	}
 
 	private handleAddressChange({
@@ -41,12 +39,12 @@ export class OrderPresenter extends BasePresenter {
 		field: string;
 		value: string;
 	}): void {
-		this.model.setOrderAddress(field, value);
+		this.formModel.setOrderAddress(field, value);
 		this.validateOrder();
 	}
 
 	private handleSubmit(): void {
-		if (this.model.validateOrder()) {
+		if (this.formModel.validateOrder()) {
 			this.events.emit('modal:update', {
 				content: this.contactsView.render(),
 				title: 'Контакты',
@@ -61,7 +59,7 @@ export class OrderPresenter extends BasePresenter {
 	}
 
 	private validateOrder(): void {
-		const isValid = this.model.validateOrder();
+		const isValid = this.formModel.validateOrder();
 		this.view.valid = isValid;
 	}
 }

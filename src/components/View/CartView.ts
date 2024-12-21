@@ -1,16 +1,21 @@
-import { createElement } from '../../utils/utils';
 import { IEvents } from '../base/events';
 import { IProduct } from '../../types';
-import { CartItemCard } from './CartItemCardView';
+import { CartItemCard } from '../view/CartItemCardView';
 import { IDOMService } from '../../services/DOMService';
 
+/** Interface for cart functionality */
 export interface ICart {
-	renderHeaderCartCounter(value: number): void;
-	renderSumAllProducts(sumAll: number): void;
-	render(): HTMLElement;
+	/** Renders the cart items */
 	renderItems(items: IProduct[]): void;
+	/** Updates the cart counter in header */
+	renderHeaderCartCounter(count: number): void;
+	/** Updates total sum display */
+	renderSumAllProducts(sum: number): void;
+	/** Renders the cart view */
+	render(): HTMLElement;
 }
 
+/** Cart view component for displaying shopping cart contents */
 export class Cart implements ICart {
 	protected readonly elements: {
 		cart: HTMLElement;
@@ -18,12 +23,19 @@ export class Cart implements ICart {
 		list: HTMLElement;
 		button: HTMLButtonElement;
 		price: HTMLElement;
-		headerButton: HTMLButtonElement;
+		headerButton: HTMLElement;
 		headerCounter: HTMLElement;
 	};
 	protected readonly itemTemplate: HTMLTemplateElement;
 	private cartElement: HTMLElement;
 
+	/**
+	 * Creates a new Cart instance
+	 * @param template - Cart template
+	 * @param events - Event emitter
+	 * @param domService - DOM service
+	 * @param itemTemplate - Template for cart items
+	 */
 	constructor(
 		template: HTMLTemplateElement,
 		protected events: IEvents,
@@ -58,14 +70,32 @@ export class Cart implements ICart {
 		});
 	}
 
+	/**
+	 * Updates the cart counter display in header
+	 * @param count - Number of items in cart
+	 */
+	renderHeaderCartCounter(count: number): void {
+		this.domService.setContent(this.elements.headerCounter, String(count));
+	}
+
+	/**
+	 * Updates total sum display
+	 * @param sum - Total sum of products in cart
+	 */
+	renderSumAllProducts(sum: number): void {
+		this.domService.setContent(this.elements.price, `${sum} синапсов`);
+	}
+
+	/**
+	 * Renders the cart items
+	 * @param items - Array of products in cart
+	 */
 	renderItems(items: IProduct[]): void {
 		if (!items.length) {
 			this.elements.button.setAttribute('disabled', 'disabled');
-			this.elements.list.replaceChildren(
-				createElement<HTMLParagraphElement>('p', {
-					textContent: 'Корзина пуста',
-				})
-			);
+			const emptyMessage = this.domService.createElement('p');
+			this.domService.setContent(emptyMessage, 'Корзина пуста');
+			this.elements.list.replaceChildren(emptyMessage);
 			return;
 		}
 
@@ -87,15 +117,11 @@ export class Cart implements ICart {
 		this.elements.button.removeAttribute('disabled');
 	}
 
+	/**
+	 * Renders the cart view
+	 * @returns - Cart view element
+	 */
 	render(): HTMLElement {
 		return this.cartElement;
-	}
-
-	renderHeaderCartCounter(value: number): void {
-		this.elements.headerCounter.textContent = String(value);
-	}
-
-	renderSumAllProducts(sumAll: number): void {
-		this.elements.price.textContent = `${sumAll} синапсов`;
 	}
 }

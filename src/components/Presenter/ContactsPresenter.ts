@@ -1,42 +1,41 @@
-import { IEvents } from '../base/events';
 import { BasePresenter } from '../base/presenter';
-import { IFormModel } from '../Model/FormModel';
-import { IContacts } from '../View/ContactsView';
-import { ICartModel } from '../Model/CartModel';
+import { IFormModel } from '../model/FormModel';
+import { IContacts } from '../view/ContactsView';
+import { IEvents } from '../base/events';
+import { StateService } from '../../services/StateService';
 
+/** Handles contact form logic and validation */
 export class ContactsPresenter extends BasePresenter {
 	constructor(
-		private model: IFormModel,
+		private formModel: IFormModel,
 		private view: IContacts,
-		private cartModel: ICartModel,
+		private stateService: StateService,
 		events: IEvents
 	) {
 		super(events);
-	}
 
-	init(): void {
-		this.events.on('contacts:changeInput', this.handleInputChange.bind(this));
+		this.events.on('contacts:changeInput', this.handleInput.bind(this));
 		this.events.on('contacts:submit', this.handleSubmit.bind(this));
 		this.events.on('formErrors:change', this.handleFormErrors.bind(this));
-		this.events.on('contacts:open', () => {
-			this.validateForm();
-		});
 	}
 
-	private handleInputChange({
+	private handleInput({
 		field,
 		value,
 	}: {
 		field: string;
 		value: string;
 	}): void {
-		this.model.setOrderData(field, value);
+		this.formModel.setOrderData(field, value);
 		this.validateForm();
 	}
 
 	private handleSubmit(): void {
-		if (this.model.validateContacts()) {
-			const total = this.cartModel.getSumAllProducts();
+		if (this.formModel.validateContacts()) {
+			const cart = this.stateService.getCart();
+			this.formModel.total = cart.total;
+			this.formModel.items = cart.items.map((item) => item.id);
+
 			const successContent = document
 				.querySelector<HTMLTemplateElement>('#success')
 				.content.cloneNode(true) as HTMLElement;
@@ -45,7 +44,7 @@ export class ContactsPresenter extends BasePresenter {
 				'.order-success__description'
 			);
 			if (totalElement) {
-				totalElement.textContent = `Списано ${total} синапсов`;
+				totalElement.textContent = `Списано ${cart.total} синапсов`;
 			}
 
 			const successButton = successContent.querySelector(
@@ -53,18 +52,14 @@ export class ContactsPresenter extends BasePresenter {
 			);
 			if (successButton) {
 				successButton.addEventListener('click', () => {
-					this.events.emit('modal:close');
-					this.events.emit('cart:clear');
+					this.stateService.closeModal();
+					this.stateService.clearCart();
 				});
 			}
 
-			this.events.emit('modal:update', {
-				content: successContent,
-				title: 'Заказ оформлен',
-			});
-
+			this.stateService.openModal(successContent, 'Заказ оформлен');
 			this.view.resetForm();
-			this.model.resetForm();
+			this.formModel.resetForm();
 		}
 	}
 
@@ -74,7 +69,7 @@ export class ContactsPresenter extends BasePresenter {
 	}
 
 	private validateForm(): void {
-		const isValid = this.model.validateContacts();
+		const isValid = this.formModel.validateContacts();
 		this.view.valid = isValid;
 	}
 }

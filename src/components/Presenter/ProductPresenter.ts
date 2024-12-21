@@ -1,19 +1,18 @@
 import { BasePresenter } from '../base/presenter';
 import { IProduct } from '../../types';
 import { IEvents } from '../base/events';
-import { ApiModel } from '../Model/apiModel';
-import { CardPreview } from '../View/CardPreviewView';
-import { ICartModel } from '../Model/CartModel';
+import { ProductApi } from '../../services/api/ProductApi';
+import { CardPreview } from '../view/CardPreviewView';
 import { StateService } from '../../services/StateService';
 
+/** Handles product display and interactions */
 export class ProductPresenter extends BasePresenter {
 	private gallery: HTMLElement;
 
 	constructor(
 		private stateService: StateService,
-		private cartModel: ICartModel,
 		private view: CardPreview,
-		private api: ApiModel,
+		private api: ProductApi,
 		events: IEvents
 	) {
 		super(events);
@@ -34,7 +33,6 @@ export class ProductPresenter extends BasePresenter {
 
 		this.events.on('card:addCart', (product: IProduct) => {
 			this.stateService.addToCart(product);
-			this.cartModel.setSelectedСard(product);
 		});
 	}
 
@@ -62,10 +60,14 @@ export class ProductPresenter extends BasePresenter {
 
 	async init(): Promise<void> {
 		try {
+			this.stateService.setLoading(true);
 			const products = await this.api.getListProductCard();
 			this.stateService.setProducts(products);
 		} catch (error) {
 			console.error('Failed to load products:', error);
+			this.stateService.setError('Failed to load products');
+		} finally {
+			this.stateService.setLoading(false);
 		}
 	}
 

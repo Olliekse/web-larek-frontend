@@ -5,13 +5,15 @@ export type ApiListResponse<Type> = {
 };
 
 /** Base class for API communication */
-export class Api {
+export class BaseApi {
+	protected options: RequestInit;
+
 	/**
 	 * Creates API instance
 	 * @param baseUrl - Server URL
 	 * @param options - Request settings
 	 */
-	constructor(protected baseUrl: string, protected options: RequestInit = {}) {
+	constructor(protected baseUrl: string, options: RequestInit = {}) {
 		this.options = {
 			headers: {
 				'Content-Type': 'application/json',
@@ -20,7 +22,7 @@ export class Api {
 		};
 	}
 
-	protected handleResponse(response: Response): Promise<object> {
+	protected handleResponse(response: Response): Promise<any> {
 		if (response.ok) return response.json();
 		return response
 			.json()

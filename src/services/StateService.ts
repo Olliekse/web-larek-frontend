@@ -12,6 +12,8 @@ export interface IState {
 		title?: string;
 	};
 	products: IProduct[];
+	loading: boolean;
+	error: string | null;
 }
 
 export class StateService {
@@ -24,6 +26,8 @@ export class StateService {
 			isOpen: false,
 		},
 		products: [],
+		loading: false,
+		error: null,
 	};
 
 	constructor(private events: IEvents) {
@@ -32,6 +36,7 @@ export class StateService {
 		if (savedCart) {
 			this.state.cart.items = JSON.parse(savedCart);
 			this.updateCartTotal();
+			this.events.emit('state:cart:changed', this.state.cart);
 		}
 	}
 
@@ -67,6 +72,7 @@ export class StateService {
 		this.state.cart.total = 0;
 		localStorage.removeItem('cartProducts');
 		this.events.emit('state:cart:changed', this.state.cart);
+		this.events.emit('form:reset');
 	}
 
 	private saveCartToStorage(): void {
@@ -105,5 +111,17 @@ export class StateService {
 
 	isProductInCart(productId: string): boolean {
 		return this.state.cart.items.some((item) => item.id === productId);
+	}
+
+	// Loading methods
+	setLoading(value: boolean): void {
+		this.state.loading = value;
+		this.events.emit('state:loading', value);
+	}
+
+	// Error methods
+	setError(message: string | null): void {
+		this.state.error = message;
+		this.events.emit('state:error', message);
 	}
 }

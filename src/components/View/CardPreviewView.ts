@@ -1,18 +1,37 @@
-import { Card, IActions } from './CardView';
+import { Card, IActions } from '../view/CardView';
 import { IProduct } from '../../types';
 import { IEvents } from '../base/events';
 import { IDOMService } from '../../services/DOMService';
+import { StateService } from '../../services/StateService';
+import { API_CONFIG } from '../../config/api.config';
 
+interface CardElement extends HTMLElement {
+	__cardInstance?: CardPreview;
+	__productData?: IProduct;
+}
+
+interface ButtonState {
+	text: string;
+	disabled: boolean;
+}
+
+const BUTTON_TEXT = {
+	IN_CART: 'В корзине',
+	ADD_TO_CART: 'В корзину',
+	NOT_FOR_SALE: 'Не продается',
+} as const;
+
+/** Represents a preview card with interactive button states */
 export class CardPreview extends Card {
-	text: HTMLElement;
-	protected button: HTMLButtonElement;
-	private currentProduct: IProduct;
+	protected button!: HTMLButtonElement;
+	private currentProduct!: IProduct;
 	protected cartItems: IProduct[] = [];
 
 	constructor(
 		template: HTMLTemplateElement,
 		protected events: IEvents,
 		protected domService: IDOMService,
+		protected stateService: StateService,
 		protected actions?: IActions
 	) {
 		super(template, events, domService, actions);
@@ -30,11 +49,9 @@ export class CardPreview extends Card {
 
 	protected initializeElements(): void {
 		super.initializeElements();
-		this.button = this.elements.card.querySelector(
-			'.card__button'
-		) as HTMLButtonElement;
-
-		if (this.button) {
+		const button = this.elements.card.querySelector('.card__button');
+		if (button instanceof HTMLButtonElement) {
+			this.button = button;
 			this.button.addEventListener('click', this.handleButtonClick.bind(this));
 		}
 	}
@@ -49,16 +66,16 @@ export class CardPreview extends Card {
 	}
 
 	render(data: IProduct): HTMLElement {
-		const cardElement = super.render(data);
+		const cardElement = super.render(data) as CardElement;
 		this.currentProduct = data;
 
-		(cardElement as any).__cardInstance = this;
-		(cardElement as any).__productData = data;
+		cardElement.__cardInstance = this;
+		cardElement.__productData = data;
 
 		cardElement.classList.add('gallery__item');
 		cardElement.addEventListener('click', (e: MouseEvent) => {
 			e.preventDefault();
-			const productData = (cardElement as any).__productData;
+			const productData = (cardElement as CardElement).__productData;
 			if (productData) {
 				this.handleCardSelect(productData);
 			}
@@ -69,21 +86,26 @@ export class CardPreview extends Card {
 			text.textContent = data.description;
 		}
 
-		this.updateButtonState(false, data.price !== undefined);
+		this.updateButtonState(
+			false,
+			data.price !== undefined && data.price !== null
+		);
 
 		return cardElement;
 	}
 
+	/**
+	 * Updates button state based on cart and purchase availability
+	 * @param isInCart - Whether the item is currently in cart
+	 * @param canBePurchased - Whether the item can be purchased
+	 */
 	updateButtonState(isInCart: boolean, canBePurchased: boolean = true): void {
 		if (!this.button) return;
 
-		if (isInCart) {
-			this.button.setAttribute('disabled', 'true');
-			this.button.textContent = 'В корзине';
-		} else {
-			this.button.textContent = canBePurchased ? 'В корзину' : 'Не продается';
-			this.button.disabled = !canBePurchased;
-		}
+		const buttonState = this.getButtonState(isInCart, canBePurchased);
+
+		this.button.textContent = buttonState.text;
+		this.button.disabled = buttonState.disabled;
 	}
 
 	setCategory(value: string): void {
@@ -142,23 +164,28 @@ export class CardPreview extends Card {
 		return cardElement;
 	}
 
+	/**
+	 * Creates a button with appropriate state and event listeners
+	 * @param data - Product data to create button for
+	 * @returns HTMLElement - The created button
+	 */
 	private createButton(data: IProduct): HTMLElement {
 		const button = this.domService.createElement('button', [
 			'button',
 			'card__button',
 		]);
 
-		if (this.isInCart(data)) {
+		const isInCart = this.stateService.isProductInCart(data.id);
+		const canBePurchased = data.price !== undefined && data.price !== null;
+
+		const buttonState = this.getButtonState(isInCart, canBePurchased);
+
+		this.domService.setContent(button, buttonState.text);
+		if (buttonState.disabled) {
 			this.domService.setAttributes(button, { disabled: 'true' });
-			this.domService.setContent(button, 'В корзине');
-		} else {
-			this.domService.setContent(
-				button,
-				data.price ? 'В корзину' : 'Не продается'
-			);
-			if (!data.price) {
-				this.domService.setAttributes(button, { disabled: 'true' });
-			}
+		}
+
+		if (!isInCart) {
 			button.addEventListener('click', this.handleButtonClick.bind(this));
 		}
 
@@ -176,14 +203,20 @@ export class CardPreview extends Card {
 	}
 
 	private handleCardSelect(product: IProduct): void {
-		this.events.emit('cart:state:get');
+		this.events.emit('card:select', product);
+	}
 
-		setTimeout(() => {
-			const modalCard = this.renderModal(product);
-			this.events.emit('modal:open', {
-				content: modalCard,
-				title: product.title,
-			});
-		}, 0);
+	private getButtonState(
+		isInCart: boolean,
+		canBePurchased: boolean
+	): ButtonState {
+		return {
+			text: isInCart
+				? BUTTON_TEXT.IN_CART
+				: canBePurchased
+				? BUTTON_TEXT.ADD_TO_CART
+				: BUTTON_TEXT.NOT_FOR_SALE,
+			disabled: isInCart || !canBePurchased,
+		};
 	}
 }

@@ -1,7 +1,6 @@
-import { Card } from './CardView';
+import { Card } from '../view/CardView';
 import { IEvents } from '../base/events';
 import { IProduct } from '../../types';
-import { createElement } from '../../utils/utils';
 import { IDOMService } from '../../services/DOMService';
 
 export interface ICartItemCard {
@@ -10,13 +9,23 @@ export interface ICartItemCard {
 	index: number;
 }
 
+interface CartItemElements {
+	index: HTMLElement;
+	title: HTMLElement;
+	price: HTMLElement;
+	deleteButton: HTMLButtonElement;
+}
+
+/** Represents a cart item card with product information */
 export class CartItemCard extends Card {
-	protected _title: HTMLElement;
-	protected _price: HTMLElement;
 	protected _container: HTMLElement;
-	protected _deleteButton: HTMLButtonElement;
-	protected _index: HTMLElement;
 	protected data: IProduct = null;
+
+	private readonly SELECTORS = {
+		title: 'h3',
+		price: 'span',
+		index: 'div',
+	} as const;
 
 	constructor(
 		container: HTMLElement,
@@ -24,64 +33,82 @@ export class CartItemCard extends Card {
 		protected domService: IDOMService,
 		protected actions?: { onClick: (event: MouseEvent) => void }
 	) {
-		const template = document.querySelector(
-			'#card-basket'
-		) as HTMLTemplateElement;
+		const template =
+			document.querySelector<HTMLTemplateElement>('#card-basket');
+		if (!template) {
+			throw new Error('Card basket template not found');
+		}
 		super(template, events, domService);
 
-		this._container = createElement('div', {
-			className: 'basket__item card card_compact',
-		});
+		this.createElements();
 
-		this._index = createElement('div', {
-			className: 'basket__item-index',
-		});
-
-		this._title = createElement('h3', {
-			className: 'card__title',
-		});
-
-		this._price = createElement('span', {
-			className: 'card__price',
-		});
-
-		this._deleteButton = createElement('button', {
-			className: 'basket__item-delete',
-		}) as HTMLButtonElement;
-
-		this._container.appendChild(this._index);
-		this._container.appendChild(this._title);
-		this._container.appendChild(this._price);
-		this._container.appendChild(this._deleteButton);
-
-		container.appendChild(this._container);
-
-		this._deleteButton.addEventListener('click', (e: Event) => {
-			e.preventDefault();
-			this.events.emit('card:delete', this.data);
-		});
+		this.domService.appendChild(container, this._container);
 
 		if (actions?.onClick) {
 			this._container.addEventListener('click', actions.onClick);
 		}
 	}
 
+	/** Creates and initializes all DOM elements for the cart item */
+	private createElements(): void {
+		this._container = this.domService.createElement('div', [
+			'basket__item',
+			'card',
+			'card_compact',
+		]);
+
+		const elements: CartItemElements = {
+			index: this.domService.createElement('div', 'basket__item-index'),
+			title: this.domService.createElement('h3', 'card__title'),
+			price: this.domService.createElement('span', 'card__price'),
+			deleteButton: this.domService.createElement(
+				'button',
+				'basket__item-delete'
+			) as HTMLButtonElement,
+		};
+
+		Object.values(elements).forEach((element) =>
+			this.domService.appendChild(this._container, element)
+		);
+
+		elements.deleteButton.addEventListener('click', (e: Event) => {
+			e.preventDefault();
+			this.events.emit('card:delete', this.data);
+		});
+	}
+
 	set title(value: string) {
-		this._title.textContent = value;
+		const titleElement = this._container.querySelector<HTMLElement>(
+			this.SELECTORS.title
+		);
+		if (titleElement) {
+			titleElement.textContent = value;
+		}
 	}
 
 	set price(value: number | null) {
-		this._price.textContent = value ? `${value} синапсов` : '';
+		const priceElement = this._container.querySelector<HTMLElement>(
+			this.SELECTORS.price
+		);
+		if (priceElement) {
+			priceElement.textContent = value ? `${value} синапсов` : '';
+		}
 	}
 
 	set index(value: number) {
-		this._index.textContent = value.toString();
+		const indexElement = this._container.querySelector<HTMLElement>(
+			this.SELECTORS.index
+		);
+		if (indexElement) {
+			indexElement.textContent = value.toString();
+		}
 	}
 
 	set product(value: IProduct) {
 		this.data = value;
 	}
 
+	/** Sets the product data and updates the view */
 	render(data: IProduct): HTMLElement {
 		this.product = data;
 		this.title = data.title;
@@ -89,6 +116,10 @@ export class CartItemCard extends Card {
 		return this._container;
 	}
 
+	/**
+	 * Updates the index display of the cart item
+	 * @param index - The position of the item in the cart
+	 */
 	setIndex(index: number): void {
 		this.index = index;
 	}

@@ -19,6 +19,7 @@ export interface IFormModel {
 	resetForm(): void;
 }
 
+/** Manages form data and validation rules */
 export class FormModel implements IFormModel {
 	payment: string;
 	email: string;

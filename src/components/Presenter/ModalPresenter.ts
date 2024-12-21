@@ -1,45 +1,63 @@
-import { IModalView } from '../View/ModalView';
-import { IEvents } from '../base/events';
 import { BasePresenter } from '../base/presenter';
-import { CardPreview } from '../View/CardPreviewView';
-import { CartModel, ICartModel } from '../Model/CartModel';
-import { IProduct } from '../../types';
+import { IEvents } from '../base/events';
+import { CardPreview } from '../view/CardPreviewView';
+import { StateService } from '../../services/StateService';
 
+/** Interface for modal view functionality */
+export interface IModalView {
+	/** Opens the popup */
+	open(): void;
+	/** Closes the popup */
+	close(): void;
+	/** Puts content in the popup */
+	setContent(content: HTMLElement): void;
+	/** Sets the popup title */
+	setTitle(title: string): void;
+}
+
+interface ModalState {
+	isOpen: boolean;
+	content?: HTMLElement;
+	title?: string;
+}
+
+/** Controls the popup window behavior */
 export class ModalPresenter extends BasePresenter {
+	/**
+	 * Creates a new ModalPresenter instance
+	 * @param view - Modal view instance
+	 * @param cardView - Card preview view instance
+	 * @param stateService - Application state service
+	 * @param events - Event emitter instance
+	 */
 	constructor(
 		private view: IModalView,
 		private cardView: CardPreview,
-		private cartModel: ICartModel,
+		private stateService: StateService,
 		events: IEvents
 	) {
 		super(events);
 
-		this.events.on('modal:open', this.handleOpen.bind(this));
-		this.events.on('modal:close', this.handleClose.bind(this));
-		this.events.on('modal:product:open', this.handleProductOpen.bind(this));
-	}
+		this.events.on('state:modal:changed', (modalState: ModalState) => {
+			if (modalState.isOpen) {
+				this.view.open();
+				if (modalState.content) {
+					this.view.setContent(modalState.content);
+				}
+				if (modalState.title) {
+					this.view.setTitle(modalState.title);
+				}
+			} else {
+				this.view.close();
+			}
+		});
 
-	private handleProductOpen(product: IProduct): void {
-		this.events.emit('cart:state:get');
+		this.events.on('modal:close', () => {
+			this.stateService.closeModal();
+		});
 
-		setTimeout(() => {
-			const modalCard = this.cardView.renderModal(product);
-			this.handleOpen({
-				content: modalCard,
-				title: product.title,
-			});
-		}, 0);
-	}
-
-	private handleOpen(data: { content: HTMLElement; title?: string }): void {
-		this.view.setContent(data.content);
-		if (data.title) {
-			this.view.setTitle(data.title);
-		}
-		this.view.open();
-	}
-
-	private handleClose(): void {
-		this.view.close();
+		this.events.on('modal:open', (modalState: ModalState) => {
+			this.stateService.openModal(modalState.content, modalState.title);
+		});
 	}
 }

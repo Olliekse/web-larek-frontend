@@ -1,91 +1,90 @@
 import { IEvents } from '../base/events';
+import { IDOMService } from '../../services/DOMService';
 
 export interface IOrder {
-	formOrder: HTMLFormElement;
-	buttonAll: HTMLButtonElement[];
-	paymentSelection: String;
-	formErrors: HTMLElement;
+	render(): HTMLElement;
 	valid: boolean;
 	error: string;
-	render(): HTMLElement;
 	resetForm(): void;
 }
 
 export class Order implements IOrder {
-	formOrder: HTMLFormElement;
-	buttonAll: HTMLButtonElement[];
-	buttonSubmit: HTMLButtonElement;
-	formErrors: HTMLElement;
-	private _valid: boolean = false;
-	private _error: string = '';
+	protected _paymentButtons: HTMLButtonElement[];
+	protected _address: HTMLInputElement;
+	protected _button: HTMLButtonElement;
+	protected _error: HTMLElement;
+	protected _form: HTMLFormElement;
 
-	constructor(template: HTMLTemplateElement, protected events: IEvents) {
-		this.formOrder = template.content
+	constructor(
+		protected template: HTMLTemplateElement,
+		protected events: IEvents,
+		protected domService: IDOMService
+	) {
+		this._form = template.content
 			.querySelector('.form')
 			.cloneNode(true) as HTMLFormElement;
-		this.buttonAll = Array.from(this.formOrder.querySelectorAll('.button_alt'));
-		this.buttonSubmit = this.formOrder.querySelector('.order__button');
-		this.formErrors = this.formOrder.querySelector('.form__errors');
+		this._paymentButtons = Array.from(
+			this._form.querySelectorAll('button[name="card"], button[name="cash"]')
+		) as HTMLButtonElement[];
+		this._address = this._form.querySelector(
+			'input[name="address"]'
+		) as HTMLInputElement;
+		this._button = this._form.querySelector(
+			'.order__button'
+		) as HTMLButtonElement;
+		this._error = this._form.querySelector('.form__errors') as HTMLElement;
 
-		this.buttonAll.forEach((item) => {
-			item.addEventListener('click', () => {
-				this.paymentSelection = item.name;
-				events.emit('order:paymentSelection', { payment: item.name });
+		this._paymentButtons.forEach((button) => {
+			button.addEventListener('click', () => {
+				this.handlePayment(button);
 			});
 		});
 
-		this.formOrder.addEventListener('input', (event: Event) => {
-			const target = event.target as HTMLInputElement;
-			const field = target.name;
-			const value = target.value;
-			this.events.emit(`order:changeAddress`, { field, value });
+		this._address.addEventListener('input', (e: Event) => {
+			this.handleInput(e);
 		});
 
-		this.formOrder.addEventListener('submit', (event: Event) => {
-			event.preventDefault();
+		this._button.addEventListener('click', (e: Event) => {
+			e.preventDefault();
 			this.events.emit('order:submit');
 		});
-
-		this.buttonSubmit.addEventListener('click', (event: Event) => {
-			event.preventDefault();
-			if (this._valid) {
-				this.events.emit('order:submit');
-			}
-		});
 	}
 
-	set paymentSelection(paymentMethod: string) {
-		this.buttonAll.forEach((item) => {
-			item.classList.toggle('button_alt-active', item.name === paymentMethod);
-		});
-	}
-
-	get valid(): boolean {
-		return this._valid;
+	render(): HTMLElement {
+		return this._form;
 	}
 
 	set valid(value: boolean) {
-		this._valid = value;
-		this.buttonSubmit.disabled = !value;
-	}
-
-	get error(): string {
-		return this._error;
+		if (value) {
+			this._button.removeAttribute('disabled');
+		} else {
+			this._button.setAttribute('disabled', 'disabled');
+		}
 	}
 
 	set error(value: string) {
-		this.formErrors.textContent = value;
-	}
-
-	render() {
-		return this.formOrder;
+		this.domService.setContent(this._error, value);
 	}
 
 	resetForm(): void {
-		this.formOrder.reset();
-		this.buttonAll.forEach((button) => {
-			button.classList.remove('button_alt-active');
+		this._address.value = '';
+		this._paymentButtons.forEach((button) => {
+			this.domService.removeClass(button, 'button_alt-active');
 		});
-		this.formErrors.textContent = '';
+	}
+
+	private handlePayment(button: HTMLButtonElement): void {
+		this._paymentButtons.forEach((btn) => {
+			this.domService.removeClass(btn, 'button_alt-active');
+		});
+		this.domService.addClass(button, 'button_alt-active');
+		this.events.emit('order:paymentSelection', { payment: button.name });
+	}
+
+	private handleInput(e: Event): void {
+		this.events.emit('order:changeAddress', {
+			field: (e.target as HTMLInputElement).name,
+			value: (e.target as HTMLInputElement).value,
+		});
 	}
 }

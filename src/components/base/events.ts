@@ -1,71 +1,41 @@
 import { EventName, EventPayloadMap } from '../../types/events';
 
+/** Event handler function type */
+export type EventHandler = (...args: unknown[]) => void;
+
+/** For sending messages between parts of the app */
 export interface IEvents {
-	on<T extends EventName>(
-		event: T,
-		callback: (data: EventPayloadMap[T]) => void
-	): void;
-	emit<T extends EventName>(event: T, data?: EventPayloadMap[T]): void;
-	trigger<T extends EventName>(
-		event: T,
-		context?: Partial<EventPayloadMap[T]>
-	): (data: EventPayloadMap[T]) => void;
+	/** Listen for something happening */
+	on(event: string, handler: EventHandler): void;
+	/** Stop listening */
+	off(event: string, handler: EventHandler): void;
+	/** Tell others something happened */
+	emit(event: string, ...args: unknown[]): void;
 }
 
+/** Event emitter implementation for application-wide events */
 export class EventEmitter implements IEvents {
-	private _events: Map<EventName, Set<Function>>;
+	private readonly events: Record<string, EventHandler[]> = {};
 
-	constructor() {
-		this._events = new Map<EventName, Set<Function>>();
-	}
-
-	on<T extends EventName>(
-		eventName: T,
-		callback: (data: EventPayloadMap[T]) => void
-	) {
-		if (!this._events.has(eventName)) {
-			this._events.set(eventName, new Set<Function>());
+	on(event: string, handler: EventHandler): void {
+		if (!this.events[event]) {
+			this.events[event] = [];
 		}
-		this._events.get(eventName)?.add(callback);
+		this.events[event].push(handler);
 	}
 
-	off(eventName: EventName, callback: Function) {
-		if (this._events.has(eventName)) {
-			this._events.get(eventName)!.delete(callback);
-			if (this._events.get(eventName)?.size === 0) {
-				this._events.delete(eventName);
+	off(event: string, handler: EventHandler): void {
+		if (this.events[event]) {
+			this.events[event] = this.events[event].filter((h) => h !== handler);
+			if (this.events[event].length === 0) {
+				delete this.events[event];
 			}
 		}
 	}
 
-	emit<T extends EventName>(eventName: T, data?: EventPayloadMap[T]) {
-		this._events.forEach((subscribers, name) => {
-			if (name === '*') {
-				subscribers.forEach((callback) => callback({ eventName, data }));
-			}
-			if (name === eventName) {
-				subscribers.forEach((callback) => callback(data));
-			}
-		});
-	}
-
-	onAll(callback: (event: { eventName: EventName; data: unknown }) => void) {
-		this.on('*' as EventName, callback);
-	}
-
-	offAll() {
-		this._events = new Map<EventName, Set<Function>>();
-	}
-
-	trigger<T extends EventName>(
-		eventName: T,
-		context?: Partial<EventPayloadMap[T]>
-	) {
-		return (event: Partial<EventPayloadMap[T]> = {}) => {
-			this.emit(eventName, {
-				...(event || {}),
-				...(context || {}),
-			} as EventPayloadMap[T]);
-		};
+	emit(event: string, ...args: unknown[]): void {
+		if (this.events[event]) {
+			this.events[event].forEach((handler) => handler(...args));
+		}
 	}
 }
