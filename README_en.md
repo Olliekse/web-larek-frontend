@@ -7,7 +7,6 @@
    - [Overview](#overview)
    - [Communication Flow](#communication-flow)
    - [Benefits](#benefits)
-   - [UML Class Diagram](#uml-class-diagram)
 3. [Key Features](#key-features)
 4. [Technical Stack](#technical-stack)
 5. [Getting Started](#getting-started)
@@ -100,19 +99,6 @@ The application is divided into three main layers:
 
 For detailed implementation of each component, see [Class Documentation](#class-documentation).
 For event system details, see [Core Concepts - Event System](#event-system).
-
-### UML Class Diagram
-
-The following diagram illustrates the relationships between the main classes in the application:
-
-![UML Class Diagram](./UML.png)
-
-This diagram shows:
-
-- Class hierarchies and inheritance relationships
-- Component interactions and dependencies
-- Event flow between components
-- MVP pattern implementation structure
 
 ---
 
