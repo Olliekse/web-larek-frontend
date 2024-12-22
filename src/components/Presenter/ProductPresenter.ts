@@ -4,6 +4,7 @@ import { IEvents } from '../base/events';
 import { ProductApi } from '../../services/api/ProductApi';
 import { CardPreview } from '../view/CardPreviewView';
 import { StateService } from '../../services/StateService';
+import { ApiError } from '../../services/api/BaseApi';
 
 /** Handles product display and interactions */
 export class ProductPresenter extends BasePresenter {
@@ -60,14 +61,29 @@ export class ProductPresenter extends BasePresenter {
 
 	async init(): Promise<void> {
 		try {
-			this.stateService.setLoading(true);
+			this.stateService.setLoading('products', true);
 			const products = await this.api.getListProductCard();
 			this.stateService.setProducts(products);
 		} catch (error) {
 			console.error('Failed to load products:', error);
-			this.stateService.setError('Failed to load products');
+			if (error instanceof ApiError) {
+				switch (error.type) {
+					case 'network':
+						this.stateService.setError(
+							'Network connection error. Please check your internet connection.'
+						);
+						break;
+					case 'server':
+						this.stateService.setError('Server error. Please try again later.');
+						break;
+					default:
+						this.stateService.setError(error.message);
+				}
+			} else {
+				this.stateService.setError('Failed to load products');
+			}
 		} finally {
-			this.stateService.setLoading(false);
+			this.stateService.setLoading('products', false);
 		}
 	}
 

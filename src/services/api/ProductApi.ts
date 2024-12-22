@@ -1,41 +1,43 @@
-import { BaseApi, ApiListResponse } from './BaseApi';
+import { BaseApi, ApiListResponse, ApiError } from './BaseApi';
 import { IOrder, IProduct } from '../../types';
 import { API_CONFIG } from '../../config/api.config';
 
 export interface IProductApi {
-	cdn: string;
-	items: IProduct[];
-	getListProductCard: () => Promise<IProduct[]>;
-	postOrderLot: (order: IOrder) => Promise<IOrder>;
+	readonly cdn: string;
+	getListProductCard(): Promise<IProduct[]>;
+	orderProducts(order: IOrder): Promise<{ id: string }>;
 }
 
 /** Handles product-related API requests */
 export class ProductApi extends BaseApi implements IProductApi {
-	cdn: string;
-	items: IProduct[];
-
-	constructor(cdn: string, baseUrl: string, options?: RequestInit) {
+	constructor(
+		public readonly cdn: string,
+		baseUrl: string,
+		options?: RequestInit
+	) {
 		super(baseUrl, options);
-		this.cdn = cdn;
 	}
 
-	/** Gets list of products from the server */
-	getListProductCard(): Promise<IProduct[]> {
-		return this.get(API_CONFIG.ENDPOINTS.products).then(
-			(data: ApiListResponse<IProduct>) =>
-				data.items.map((item) => ({
-					...item,
-					image: item.image.startsWith('http')
-						? item.image
-						: this.cdn + item.image,
-				}))
+	/**
+	 * Gets list of products from the server
+	 * @throws {ApiError} When products cannot be fetched
+	 */
+	async getListProductCard(): Promise<IProduct[]> {
+		const data = await this.get<ApiListResponse<IProduct>>(
+			API_CONFIG.ENDPOINTS.products
 		);
+
+		return data.items.map((item: IProduct) => ({
+			...item,
+			image: item.image.startsWith('http') ? item.image : this.cdn + item.image,
+		}));
 	}
 
-	/** Sends order data to the server */
-	postOrderLot(order: IOrder): Promise<IOrder> {
-		return this.post(API_CONFIG.ENDPOINTS.orders, order).then(
-			(data: IOrder) => data
-		);
+	/**
+	 * Orders products from the server
+	 * @throws {ApiError} When order cannot be processed
+	 */
+	async orderProducts(order: IOrder): Promise<{ id: string }> {
+		return this.post<{ id: string }>(API_CONFIG.ENDPOINTS.orders, order);
 	}
 }

@@ -4,6 +4,39 @@ export type ApiListResponse<Type> = {
 	items: Type[];
 };
 
+/** Custom API error type */
+export type ApiErrorType = 'network' | 'validation' | 'server' | 'auth';
+
+interface ApiErrorResponse {
+	error: string;
+	code?: string;
+	details?: Record<string, string>;
+}
+
+export class ApiError extends Error {
+	constructor(
+		public readonly status: number,
+		public readonly message: string,
+		public readonly type: ApiErrorType,
+		public readonly details?: Record<string, string>
+	) {
+		super(message);
+		this.name = 'ApiError';
+	}
+
+	static fromResponse(status: number, data: ApiErrorResponse): ApiError {
+		const type = ApiError.getTypeFromStatus(status);
+		return new ApiError(status, data.error, type, data.details);
+	}
+
+	private static getTypeFromStatus(status: number): ApiErrorType {
+		if (status === 0) return 'network';
+		if (status === 401 || status === 403) return 'auth';
+		if (status === 400 || status === 422) return 'validation';
+		return 'server';
+	}
+}
+
 /** Base class for API communication */
 export class BaseApi {
 	protected options: RequestInit;
@@ -22,25 +55,58 @@ export class BaseApi {
 		};
 	}
 
-	protected handleResponse(response: Response): Promise<any> {
-		if (response.ok) return response.json();
-		return response
-			.json()
-			.then((data) => Promise.reject(data.error ?? response.statusText));
+	/**
+	 * Handles API response
+	 * @throws {ApiError} When response is not ok
+	 */
+	protected async handleResponse<T>(response: Response): Promise<T> {
+		if (!response.ok) {
+			const error = (await response.json().catch(() => ({
+				error: response.statusText,
+			}))) as ApiErrorResponse;
+
+			throw ApiError.fromResponse(response.status, error);
+		}
+
+		try {
+			return await response.json();
+		} catch (error) {
+			throw new ApiError(response.status, 'Invalid JSON response', 'server');
+		}
 	}
 
-	protected get(uri: string) {
-		return fetch(this.baseUrl + uri, {
-			...this.options,
-			method: 'GET',
-		}).then(this.handleResponse);
+	/**
+	 * Makes GET request
+	 * @throws {ApiError} When request fails
+	 */
+	protected async get<T>(uri: string): Promise<T> {
+		try {
+			const response = await fetch(this.baseUrl + uri, {
+				...this.options,
+				method: 'GET',
+			});
+			return this.handleResponse<T>(response);
+		} catch (error) {
+			if (error instanceof ApiError) throw error;
+			throw new ApiError(0, 'Network error', 'network');
+		}
 	}
 
-	protected post(uri: string, data: object) {
-		return fetch(this.baseUrl + uri, {
-			...this.options,
-			method: 'POST',
-			body: JSON.stringify(data),
-		}).then(this.handleResponse);
+	/**
+	 * Makes POST request
+	 * @throws {ApiError} When request fails
+	 */
+	protected async post<T>(uri: string, data: object): Promise<T> {
+		try {
+			const response = await fetch(this.baseUrl + uri, {
+				...this.options,
+				method: 'POST',
+				body: JSON.stringify(data),
+			});
+			return this.handleResponse<T>(response);
+		} catch (error) {
+			if (error instanceof ApiError) throw error;
+			throw new ApiError(0, 'Network error', 'network');
+		}
 	}
 }

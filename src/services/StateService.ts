@@ -12,9 +12,15 @@ export interface IState {
 		title?: string;
 	};
 	products: IProduct[];
-	loading: boolean;
+	loading: LoadingState;
 	error: string | null;
 }
+
+export type LoadingState = {
+	products: boolean;
+	order: boolean;
+	cart: boolean;
+};
 
 export class StateService {
 	private state: IState = {
@@ -26,7 +32,11 @@ export class StateService {
 			isOpen: false,
 		},
 		products: [],
-		loading: false,
+		loading: {
+			products: false,
+			order: false,
+			cart: false,
+		},
 		error: null,
 	};
 
@@ -114,9 +124,21 @@ export class StateService {
 	}
 
 	// Loading methods
-	setLoading(value: boolean): void {
-		this.state.loading = value;
-		this.events.emit('state:loading', value);
+	setLoading(type: keyof LoadingState, value: boolean): void {
+		this.state.loading[type] = value;
+		this.events.emit('state:loading', {
+			type,
+			value,
+			isAnyLoading: Object.values(this.state.loading).some(Boolean),
+		});
+	}
+
+	isLoading(type: keyof LoadingState): boolean {
+		return this.state.loading[type];
+	}
+
+	isAnyLoading(): boolean {
+		return Object.values(this.state.loading).some(Boolean);
 	}
 
 	// Error methods
