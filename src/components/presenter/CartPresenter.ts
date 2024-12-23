@@ -1,7 +1,7 @@
 import { BasePresenter } from '../base/presenter';
 import { ICart } from '../view/CartView';
 import { IEvents } from '../base/events';
-import { StateService } from '../../services/StateService';
+import { AppState } from '../model/AppState';
 import { IProduct } from '../../types';
 
 interface CartState {
@@ -13,12 +13,12 @@ interface CartState {
 export class CartPresenter extends BasePresenter {
 	/**
 	 * Creates a new CartPresenter instance
-	 * @param stateService - Service for managing application state
+	 * @param appState - Service for managing application state
 	 * @param view - Cart view instance
 	 * @param events - Event emitter instance
 	 */
 	constructor(
-		private stateService: StateService,
+		private appState: AppState,
 		private view: ICart,
 		events: IEvents
 	) {
@@ -33,7 +33,7 @@ export class CartPresenter extends BasePresenter {
 
 		// Handle cart opening
 		this.events.on('cart:open', () => {
-			const cart = this.stateService.getCart();
+			const cart = this.appState.getCart();
 			this.view.renderItems(cart.items);
 			this.view.renderSumAllProducts(cart.total);
 			this.events.emit('modal:open', {
@@ -43,7 +43,7 @@ export class CartPresenter extends BasePresenter {
 		});
 
 		// Initialize cart state
-		const cart = this.stateService.getCart();
+		const cart = this.appState.getCart();
 		if (cart.items.length) {
 			this.view.renderItems(cart.items);
 			this.view.renderHeaderCartCounter(cart.items.length);
@@ -52,7 +52,7 @@ export class CartPresenter extends BasePresenter {
 
 		// Handle item removal
 		this.events.on('cart:removeItem', (item: IProduct) => {
-			this.stateService.removeFromCart(item.id);
+			this.appState.removeFromCart(item.id);
 		});
 	}
 
@@ -60,7 +60,7 @@ export class CartPresenter extends BasePresenter {
 	 * Initializes the cart presenter and updates header counter
 	 */
 	init(): void {
-		const cart = this.stateService.getCart();
+		const cart = this.appState.getCart();
 		this.view.renderHeaderCartCounter(cart.items.length);
 	}
 }

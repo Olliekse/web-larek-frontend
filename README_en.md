@@ -182,8 +182,10 @@ npm run lint
 ```
 web-larek-frontend/
 ├── src/
-│   ├── components/        # Application components
+│   ├── components/        # Application components (views, models, presenters)
 │   ├── services/         # Service layer implementations
+│   │   ├── api/         # API service implementations
+│   │   └── DOMService.ts # DOM manipulation service
 │   ├── utils/            # Utility functions and helpers
 │   ├── common.blocks/    # Common block components
 │   ├── config/           # Configuration files
@@ -253,18 +255,18 @@ web-larek-frontend/
 
 2. **FormModel**
 
-   - **Purpose**: Handles all aspects of form data management and validation, including field value tracking, error management, and validation rule enforcement. Provides a reliable foundation for form-based features.
+   - **Purpose**: Manages form data validation, formatting, and state. Handles all data processing including phone number formatting and validation, ensuring proper data format before submission.
    - **Fields**:
-     - `private data: Partial<IOrderForm>` - Form field values
-     - `private errors: FormErrors` - Validation error messages
-     - `private validators: Record<string, ValidatorFn>` - Field validators
+     - `protected payment: string` - Payment method
+     - `protected email: string` - User email
+     - `protected phone: string` - User phone number (supports international formats)
+     - `protected address: string` - Delivery address
+     - `protected formErrors: FormErrors` - Validation errors
    - **Methods**:
-     - `setField(field: keyof IOrderForm, value: string): void` - Updates field value
-     - `validateField(field: keyof IOrderForm): boolean` - Validates single field
-     - `validateForm(): boolean` - Validates entire form
-     - `getErrors(): FormErrors` - Gets validation errors
-     - `resetForm(): void` - Clears form data and errors
-     - `validateBehaviour(): void` - Validates form data
+     - `setOrderData(field: string, value: string): void` - Updates and formats form data
+     - `validateContacts(): boolean` - Validates contact information
+     - `validateOrder(): boolean` - Validates order information
+     - `getOrderLot(): IOrder` - Prepares order data for submission
 
 3. **OrderModel**
    - **Purpose**: Manages the complete order lifecycle, from item collection to payment method selection and contact information. Ensures order data integrity and validation before submission.
@@ -346,18 +348,18 @@ web-larek-frontend/
      - `setContent(content: HTMLElement): void` - Updates modal content
      - `centreContent(): void` - Centres modal content
 
-5. **ContactsForm**
-   - **Purpose**: Handles user contact information collection with comprehensive validation for email and phone inputs. Ensures data quality before order submission.
+5. **ContactsView**
+   - **Purpose**: Pure view component for contact form display. Handles only UI rendering and user input capture, delegating all data processing to the model.
    - **Fields**:
-     - `private _emailInput: HTMLInputElement` - Email input field
-     - `private _phoneInput: HTMLInputElement` - Phone input field
-     - `private _submitButton: HTMLButtonElement` - Form submission button
-     - `private _errorContainer: HTMLElement` - Error message display
+     - `private _form: HTMLFormElement` - Form element
+     - `private _button: HTMLButtonElement` - Submit button
+     - `private _errors: HTMLElement` - Error display
+     - `private _inputs: HTMLInputElement[]` - Form inputs
    - **Methods**:
-     - `validateEmail(email: string): boolean` - Checks email format
-     - `validatePhone(phone: string): boolean` - Validates phone number
-     - `private handleInput(field: string, value: string): void` - Processes input changes
-     - `resetForm(): void` - Clears form data
+     - `render(): HTMLElement` - Renders the contact form
+     - `resetForm(): void` - Resets form state
+     - `set valid(value: boolean)` - Updates form validation state
+     - `set error(value: string)` - Displays validation errors
 
 ### Presenters
 
@@ -454,7 +456,7 @@ web-larek-frontend/
    - **Purpose**: Coordinates contact information collection and validation, managing form state and user input validation. Ensures valid contact data before order processing.
    - **Fields**:
      - `private formModel: FormModel` - Form data model
-     - `private view: ContactsForm` - Contact form view
+     - `private view: ContactsView` - Contact form view
      - `private api: ProductApi` - API service
    - **Methods**:
      - `init(): void`
@@ -614,7 +616,7 @@ class StateService {
 #### View (User Input)
 
 ```typescript
-class ContactsForm {
+class ContactsView {
 	constructor() {
 		this._emailInput.addEventListener('input', (e: Event) => {
 			const email = (e.target as HTMLInputElement).value;
@@ -628,7 +630,7 @@ class ContactsForm {
 
 ```typescript
 class OrderPresenter extends BasePresenter {
-	constructor(private formModel: FormModel, private view: ContactsForm) {
+	constructor(private formModel: FormModel, private view: ContactsView) {
 		super();
 		this.events.on('form:email:input', this.handleEmailInput.bind(this));
 	}

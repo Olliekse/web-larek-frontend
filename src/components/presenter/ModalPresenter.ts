@@ -1,7 +1,7 @@
 import { BasePresenter } from '../base/presenter';
 import { IEvents } from '../base/events';
 import { CardPreview } from '../view/CardPreviewView';
-import { StateService } from '../../services/StateService';
+import { AppState } from '../model/AppState';
 
 /** Interface for modal view functionality */
 export interface IModalView {
@@ -27,13 +27,13 @@ export class ModalPresenter extends BasePresenter {
 	 * Creates a new ModalPresenter instance
 	 * @param view - Modal view instance
 	 * @param cardView - Card preview view instance
-	 * @param stateService - Application state service
+	 * @param appState - Application state model
 	 * @param events - Event emitter instance
 	 */
 	constructor(
 		private view: IModalView,
 		private cardView: CardPreview,
-		private stateService: StateService,
+		private appState: AppState,
 		events: IEvents
 	) {
 		super(events);
@@ -53,11 +53,11 @@ export class ModalPresenter extends BasePresenter {
 		});
 
 		this.events.on('modal:close', () => {
-			this.stateService.closeModal();
+			this.appState.closeModal();
 		});
 
 		this.events.on('modal:open', (modalState: ModalState) => {
-			this.stateService.openModal(modalState.content, modalState.title);
+			this.appState.openModal(modalState.content, modalState.title);
 		});
 	}
 }

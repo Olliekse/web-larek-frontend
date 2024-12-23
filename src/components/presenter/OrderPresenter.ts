@@ -3,7 +3,7 @@ import { IFormModel } from '../model/FormModel';
 import { IOrder } from '../view/OrderView';
 import { IContacts } from '../view/ContactsView';
 import { IEvents } from '../base/events';
-import { StateService } from '../../services/StateService';
+import { AppState } from '../model/AppState';
 
 /** Manages order processing and submission */
 export class OrderPresenter extends BasePresenter {
@@ -11,14 +11,13 @@ export class OrderPresenter extends BasePresenter {
 		private formModel: IFormModel,
 		private view: IOrder,
 		private contactsView: IContacts,
-		private stateService: StateService,
+		private appState: AppState,
 		events: IEvents
 	) {
 		super(events);
 
 		this.events.on('order:paymentSelection', (data: { payment: string }) => {
-			this.formModel.payment = data.payment;
-			this.validateOrder();
+			this.handlePaymentSelection(data.payment);
 		});
 
 		this.events.on('order:changeAddress', this.handleAddressChange.bind(this));
@@ -30,6 +29,14 @@ export class OrderPresenter extends BasePresenter {
 			this.view.resetForm();
 			this.contactsView.resetForm();
 		});
+	}
+
+	private handlePaymentSelection(payment: string): void {
+		this.formModel.setPayment(payment);
+		if (this.formModel.validateOrder()) {
+			this.view.updatePaymentButtons(payment);
+			this.validateOrder();
+		}
 	}
 
 	private handleAddressChange({

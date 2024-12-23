@@ -3,7 +3,7 @@ import { IProduct } from '../../types';
 import { IEvents } from '../base/events';
 import { ProductApi } from '../../services/api/ProductApi';
 import { CardPreview } from '../view/CardPreviewView';
-import { StateService } from '../../services/StateService';
+import { AppState } from '../model/AppState';
 import { ApiError } from '../../services/api/BaseApi';
 
 /** Handles product display and interactions */
@@ -11,7 +11,7 @@ export class ProductPresenter extends BasePresenter {
 	private gallery: HTMLElement;
 
 	constructor(
-		private stateService: StateService,
+		private appState: AppState,
 		private view: CardPreview,
 		private api: ProductApi,
 		events: IEvents
@@ -26,20 +26,17 @@ export class ProductPresenter extends BasePresenter {
 		this.events.on('state:cart:changed', this.updateGalleryState.bind(this));
 
 		this.events.on('card:select', (product: IProduct) => {
-			this.stateService.openModal(
-				this.view.renderModal(product),
-				product.title
-			);
+			this.appState.openModal(this.view.renderModal(product), product.title);
 		});
 
 		this.events.on('card:addCart', (product: IProduct) => {
-			this.stateService.addToCart(product);
+			this.appState.addToCart(product);
 		});
 	}
 
 	private updateGalleryState(): void {
-		const cart = this.stateService.getCart();
-		this.stateService.getProducts().forEach((product) => {
+		const cart = this.appState.getCart();
+		this.appState.getProducts().forEach((product) => {
 			const cardElement = this.gallery.querySelector(
 				`[data-product-id="${product.id}"]`
 			);
@@ -61,29 +58,29 @@ export class ProductPresenter extends BasePresenter {
 
 	async init(): Promise<void> {
 		try {
-			this.stateService.setLoading('products', true);
+			this.appState.setLoading('products', true);
 			const products = await this.api.getListProductCard();
-			this.stateService.setProducts(products);
+			this.appState.setProducts(products);
 		} catch (error) {
 			console.error('Failed to load products:', error);
 			if (error instanceof ApiError) {
 				switch (error.type) {
 					case 'network':
-						this.stateService.setError(
+						this.appState.setError(
 							'Network connection error. Please check your internet connection.'
 						);
 						break;
 					case 'server':
-						this.stateService.setError('Server error. Please try again later.');
+						this.appState.setError('Server error. Please try again later.');
 						break;
 					default:
-						this.stateService.setError(error.message);
+						this.appState.setError(error.message);
 				}
 			} else {
-				this.stateService.setError('Failed to load products');
+				this.appState.setError('Failed to load products');
 			}
 		} finally {
-			this.stateService.setLoading('products', false);
+			this.appState.setLoading('products', false);
 		}
 	}
 
@@ -94,7 +91,7 @@ export class ProductPresenter extends BasePresenter {
 		}
 
 		try {
-			const products = this.stateService.getProducts();
+			const products = this.appState.getProducts();
 			this.gallery.innerHTML = '';
 			products.forEach(this.renderProductCard.bind(this));
 		} catch (error) {

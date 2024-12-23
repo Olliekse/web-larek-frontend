@@ -1,46 +1,75 @@
 import { IEvents } from '../base/events';
+import { IOrder } from '../../types';
+import { AppState } from './AppState';
 
 interface FormErrors {
 	[key: string]: string;
 }
 
 export interface IFormModel {
-	payment: string;
-	email: string;
-	phone: string;
-	address: string;
-	total: number;
-	items: string[];
+	getPayment(): string;
+	getEmail(): string;
+	getPhone(): string;
+	getAddress(): string;
+	setPayment(value: string): void;
 	setOrderAddress(field: string, value: string): void;
 	validateOrder(): boolean;
 	setOrderData(field: string, value: string): void;
 	validateContacts(): boolean;
-	getOrderLot(): object;
+	getOrderLot(): IOrder;
 	resetForm(): void;
 }
 
 /** Manages form data and validation rules */
 export class FormModel implements IFormModel {
-	payment: string;
-	email: string;
-	phone: string;
-	address: string;
-	total: number;
-	items: string[];
-	formErrors: FormErrors = {};
+	protected payment: string;
+	protected email: string;
+	protected phone: string;
+	protected address: string;
+	protected formErrors: FormErrors = {};
 
-	constructor(protected events: IEvents) {
+	constructor(protected events: IEvents, protected appState: AppState) {
 		this.payment = '';
 		this.email = '';
 		this.phone = '';
 		this.address = '';
-		this.total = 0;
-		this.items = [];
 	}
 
-	setOrderAddress(field: string, value: string) {
+	getPayment(): string {
+		return this.payment;
+	}
+
+	getEmail(): string {
+		return this.email;
+	}
+
+	getPhone(): string {
+		return this.phone;
+	}
+
+	getAddress(): string {
+		return this.address;
+	}
+
+	setPayment(value: string): void {
+		this.payment = value;
+	}
+
+	protected setEmail(value: string): void {
+		this.email = value;
+	}
+
+	protected setPhone(value: string): void {
+		this.phone = value;
+	}
+
+	protected setAddress(value: string): void {
+		this.address = value;
+	}
+
+	setOrderAddress(field: string, value: string): void {
 		if (field === 'address') {
-			this.address = value;
+			this.setAddress(value);
 		}
 
 		if (this.validateOrder()) {
@@ -48,15 +77,12 @@ export class FormModel implements IFormModel {
 		}
 	}
 
-	validateOrder() {
-		const regexp = /^[а-яА-ЯёЁa-zA-Z0-9\s\/.,-]{7,}$/;
+	validateOrder(): boolean {
 		const errors: typeof this.formErrors = {};
 
-		if (!this.address) {
+		if (!this.getAddress()) {
 			errors.address = 'Необходимо указать адрес';
-		} else if (!regexp.test(this.address)) {
-			errors.address = 'Укажите настоящий адрес';
-		} else if (!this.payment) {
+		} else if (!this.getPayment()) {
 			errors.payment = 'Выберите способ оплаты';
 		}
 
@@ -65,34 +91,26 @@ export class FormModel implements IFormModel {
 		return Object.keys(errors).length === 0;
 	}
 
-	setOrderData(field: string, value: string) {
+	setOrderData(field: string, value: string): void {
 		if (field === 'phone') {
-			const digits = value.replace(/\D/g, '');
+			let formattedPhone = value;
 
-			let normalizedDigits = digits.slice(0, 11);
-			if (normalizedDigits.startsWith('8')) {
-				normalizedDigits = '7' + normalizedDigits.slice(1);
-			}
-
-			if (normalizedDigits.length > 0) {
-				let formatted = '+7';
-				if (normalizedDigits.length > 1) {
-					const areaCode = normalizedDigits.slice(1, 4);
-					const prefix = normalizedDigits.slice(4, 7);
-					const lineNumber1 = normalizedDigits.slice(7, 9);
-					const lineNumber2 = normalizedDigits.slice(9, 11);
-
-					formatted += areaCode.length > 0 ? ' ' + areaCode : '';
-					formatted += prefix.length > 0 ? ' ' + prefix : '';
-					formatted += lineNumber1.length > 0 ? ' ' + lineNumber1 : '';
-					formatted += lineNumber2.length > 0 ? ' ' + lineNumber2 : '';
-				}
-				this.phone = formatted;
+			// Allow plus sign only at the start
+			if (formattedPhone.startsWith('+')) {
+				formattedPhone = '+' + formattedPhone.slice(1).replace(/\D/g, '');
 			} else {
-				this.phone = '+7';
+				formattedPhone = formattedPhone.replace(/\D/g, '');
 			}
+
+			// Group digits for better readability
+			if (formattedPhone.length > 0) {
+				const groups = formattedPhone.match(/.{1,3}/g) || [];
+				formattedPhone = groups.join(' ');
+			}
+
+			this.setPhone(formattedPhone);
 		} else if (field === 'email') {
-			this.email = value;
+			this.setEmail(value);
 		}
 
 		if (this.validateContacts()) {
@@ -100,46 +118,36 @@ export class FormModel implements IFormModel {
 		}
 	}
 
-	validateContacts() {
-		const regexpEmail = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+	validateContacts(): boolean {
 		const errors: typeof this.formErrors = {};
 
-		if (!this.email) {
-			errors.email = 'Необходимо указать email';
-		} else if (!regexpEmail.test(this.email)) {
-			errors.email = 'Некорректный адрес электронной почты';
-		}
-
-		if (!this.phone) {
-			errors.phone = 'Необходимо указать телефон';
-		} else if (this.phone.length < 11) {
-			errors.phone = 'Необходимо указать телефон';
+		if (!this.getEmail() || !this.getPhone()) {
+			errors.contacts = 'Необходимо указать email и телефон';
 		}
 
 		this.formErrors = errors;
 		this.events.emit('formErrors:change', this.formErrors);
 
-		return this.email.length > 0 && this.phone.length > 3;
+		return this.getEmail().length > 0 && this.getPhone().length > 0;
 	}
 
-	getOrderLot() {
+	getOrderLot(): IOrder {
+		const cart = this.appState.getCart();
 		return {
-			payment: this.payment,
-			email: this.email,
-			phone: this.phone,
-			address: this.address,
-			total: this.total,
-			items: this.items,
+			payment: this.getPayment(),
+			email: this.getEmail(),
+			phone: this.getPhone(),
+			address: this.getAddress(),
+			total: cart.total,
+			items: cart.items.map((item) => item.id),
 		};
 	}
 
 	resetForm(): void {
-		this.payment = '';
-		this.email = '';
-		this.phone = '';
-		this.address = '';
-		this.total = 0;
-		this.items = [];
+		this.setPayment('');
+		this.setEmail('');
+		this.setPhone('');
+		this.setAddress('');
 		this.formErrors = {};
 	}
 }

@@ -35,12 +35,16 @@ export class Cart implements ICart {
 	 * @param events - Event emitter
 	 * @param domService - DOM service
 	 * @param itemTemplate - Template for cart items
+	 * @param headerButton - Header cart button element
+	 * @param headerCounter - Header cart counter element
 	 */
 	constructor(
 		template: HTMLTemplateElement,
 		protected events: IEvents,
 		protected domService: IDOMService,
-		itemTemplate: HTMLTemplateElement
+		itemTemplate: HTMLTemplateElement,
+		headerButton: HTMLElement,
+		headerCounter: HTMLElement
 	) {
 		this.itemTemplate = itemTemplate;
 		this.cartElement = template.content
@@ -53,8 +57,8 @@ export class Cart implements ICart {
 			list: this.cartElement.querySelector('.basket__list'),
 			button: this.cartElement.querySelector('.basket__button'),
 			price: this.cartElement.querySelector('.basket__price'),
-			headerButton: document.querySelector('.header__basket'),
-			headerCounter: document.querySelector('.header__basket-counter'),
+			headerButton,
+			headerCounter,
 		};
 
 		this.elements.button.addEventListener('click', () => {

@@ -1,7 +1,7 @@
-import { IEvents } from '../components/base/events';
-import { IProduct } from '../types';
+import { IEvents } from '../base/events';
+import { IProduct } from '../../types';
 
-export interface IState {
+export interface IAppState {
 	cart: {
 		items: IProduct[];
 		total: number;
@@ -22,8 +22,9 @@ export type LoadingState = {
 	cart: boolean;
 };
 
-export class StateService {
-	private state: IState = {
+/** Manages application state and data */
+export class AppState {
+	private state: IAppState = {
 		cart: {
 			items: [],
 			total: 0,
@@ -41,7 +42,6 @@ export class StateService {
 	};
 
 	constructor(private events: IEvents) {
-		// Initialize state from localStorage if available
 		const savedCart = localStorage.getItem('cartProducts');
 		if (savedCart) {
 			this.state.cart.items = JSON.parse(savedCart);
@@ -57,7 +57,6 @@ export class StateService {
 		);
 	}
 
-	// Cart methods
 	addToCart(product: IProduct): void {
 		if (!this.state.cart.items.some((item) => item.id === product.id)) {
 			this.state.cart.items.push(product);
@@ -89,7 +88,6 @@ export class StateService {
 		localStorage.setItem('cartProducts', JSON.stringify(this.state.cart.items));
 	}
 
-	// Modal methods
 	openModal(content: HTMLElement, title?: string): void {
 		this.state.modal = { isOpen: true, content, title };
 		this.events.emit('state:modal:changed', this.state.modal);
@@ -100,14 +98,12 @@ export class StateService {
 		this.events.emit('state:modal:changed', this.state.modal);
 	}
 
-	// Product methods
 	setProducts(products: IProduct[]): void {
 		this.state.products = products;
 		this.events.emit('state:products:changed', this.state.products);
 	}
 
-	// Getters
-	getState(): IState {
+	getState(): IAppState {
 		return { ...this.state };
 	}
 
@@ -123,7 +119,6 @@ export class StateService {
 		return this.state.cart.items.some((item) => item.id === productId);
 	}
 
-	// Loading methods
 	setLoading(type: keyof LoadingState, value: boolean): void {
 		this.state.loading[type] = value;
 		this.events.emit('state:loading', {
@@ -141,7 +136,6 @@ export class StateService {
 		return Object.values(this.state.loading).some(Boolean);
 	}
 
-	// Error methods
 	setError(message: string | null): void {
 		this.state.error = message;
 		this.events.emit('state:error', message);

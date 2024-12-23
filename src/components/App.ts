@@ -11,7 +11,7 @@ import { ProductApi } from '../services/api/ProductApi';
 import { ModalView } from './view/ModalView';
 import { ModalPresenter } from './presenter/ModalPresenter';
 import { DOMService } from '../services/DOMService';
-import { StateService } from '../services/StateService';
+import { AppState } from './model/AppState';
 import { CardPreview } from './view/CardPreviewView';
 import { API_CONFIG } from '../config/api.config';
 
@@ -24,12 +24,12 @@ export class App {
 	private modalPresenter: ModalPresenter;
 	private readonly events: EventEmitter;
 	private readonly domService: DOMService;
-	private readonly stateService: StateService;
+	private readonly appState: AppState;
 
 	constructor() {
 		this.events = new EventEmitter();
 		this.domService = new DOMService();
-		this.stateService = new StateService(this.events);
+		this.appState = new AppState(this.events);
 		this.initializeApp();
 	}
 
@@ -47,12 +47,25 @@ export class App {
 	}
 
 	/**
+	 * Gets a DOM element by selector
+	 * @param selector - CSS selector
+	 * @throws Error if element is not found
+	 */
+	private getElement(selector: string): HTMLElement {
+		const element = document.querySelector<HTMLElement>(selector);
+		if (!element) {
+			throw new Error(`Element ${selector} not found`);
+		}
+		return element;
+	}
+
+	/**
 	 * Initializes all application components and sets up event handlers
 	 */
 	private initializeApp(): void {
 		const api = new ProductApi(API_CONFIG.CDN_URL, API_CONFIG.API_URL);
 
-		const formModel = new FormModel(this.events);
+		const formModel = new FormModel(this.events, this.appState);
 
 		const templates = {
 			cart: this.getTemplate('#basket'),
@@ -62,11 +75,16 @@ export class App {
 			card: this.getTemplate('#card-catalog'),
 		};
 
+		const headerButton = this.getElement('.header__basket');
+		const headerCounter = this.getElement('.header__basket-counter');
+
 		const cartView = new Cart(
 			templates.cart,
 			this.events,
 			this.domService,
-			templates.cartItem
+			templates.cartItem,
+			headerButton,
+			headerCounter
 		);
 		const orderView = new Order(templates.order, this.events, this.domService);
 		const contactsView = new ContactsView(
@@ -83,17 +101,17 @@ export class App {
 			templates.card,
 			this.events,
 			this.domService,
-			this.stateService
+			this.appState
 		);
 		this.modalPresenter = new ModalPresenter(
 			modalView,
 			cardView,
-			this.stateService,
+			this.appState,
 			this.events
 		);
 
 		this.cartPresenter = new CartPresenter(
-			this.stateService,
+			this.appState,
 			cartView,
 			this.events
 		);
@@ -101,17 +119,18 @@ export class App {
 			formModel,
 			orderView,
 			contactsView,
-			this.stateService,
+			this.appState,
 			this.events
 		);
 		this.contactsPresenter = new ContactsPresenter(
 			formModel,
 			contactsView,
-			this.stateService,
+			this.appState,
+			api,
 			this.events
 		);
 		this.productPresenter = new ProductPresenter(
-			this.stateService,
+			this.appState,
 			cardView,
 			api,
 			this.events

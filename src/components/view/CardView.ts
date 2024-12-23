@@ -10,11 +10,28 @@ export interface IActions {
 /** Interface defining required card functionality */
 export interface ICard {
 	render(data: IProduct): HTMLElement;
-	setCategory(value: string): void;
 }
 
-/** Base class for card components */
-export class Card implements ICard {
+/** Base abstract class for all card components */
+export abstract class BaseCard implements ICard {
+	constructor(
+		protected events: IEvents,
+		protected domService: IDOMService,
+		protected actions?: IActions
+	) {}
+
+	abstract render(data: IProduct): HTMLElement;
+
+	protected formatPrice(price: number | undefined): string {
+		if (price === undefined || price === null) {
+			return 'Бесценно';
+		}
+		return `${price} синапсов`;
+	}
+}
+
+/** Product catalog card implementation */
+export class Card extends BaseCard {
 	protected readonly elements: {
 		card: HTMLElement;
 		category: HTMLElement;
@@ -23,19 +40,14 @@ export class Card implements ICard {
 		price: HTMLElement;
 	};
 
-	/**
-	 * Creates a new Card instance
-	 * @param template - HTML template for the card
-	 * @param events - Event emitter instance
-	 * @param domService - DOM manipulation service
-	 * @param actions - Optional click handlers
-	 */
 	constructor(
 		template: HTMLTemplateElement,
-		protected events: IEvents,
-		protected domService: IDOMService,
-		protected actions?: IActions
+		events: IEvents,
+		domService: IDOMService,
+		actions?: IActions
 	) {
+		super(events, domService, actions);
+
 		this.elements = {
 			card: template.content
 				.querySelector('.card')
@@ -53,9 +65,6 @@ export class Card implements ICard {
 		}
 	}
 
-	/**
-	 * Initializes card elements from the template
-	 */
 	protected initializeElements(): void {
 		const { card } = this.elements;
 		this.elements.category = card.querySelector('.card__category');
@@ -64,11 +73,6 @@ export class Card implements ICard {
 		this.elements.price = card.querySelector('.card__price');
 	}
 
-	/**
-	 * Renders the card with product data
-	 * @param data - Product data to display
-	 * @returns HTMLElement - The rendered card element
-	 */
 	render(data: IProduct): HTMLElement {
 		const cardElement = this.elements.card.cloneNode(true) as HTMLElement;
 		const category = cardElement.querySelector(
@@ -94,11 +98,6 @@ export class Card implements ICard {
 		return cardElement;
 	}
 
-	/**
-	 * Maps Russian category names to CSS class names
-	 * @param category - Category name in Russian
-	 * @returns CSS class name suffix
-	 */
 	protected getCategoryClass(category: string): string {
 		const categoryMap: Record<string, string> = {
 			'софт-скил': 'soft',
@@ -110,22 +109,6 @@ export class Card implements ICard {
 		return categoryMap[category as keyof typeof categoryMap] || 'other';
 	}
 
-	/**
-	 * Formats the price for display
-	 * @param price - Product price in synapses
-	 * @returns Formatted price string
-	 */
-	protected formatPrice(price: number | undefined): string {
-		if (price === undefined || price === null) {
-			return 'Бесценно';
-		}
-		return `${price} синапсов`;
-	}
-
-	/**
-	 * Updates the category display
-	 * @param value - New category value to display
-	 */
 	setCategory(value: string): void {
 		if (this.elements.category) {
 			this.domService.setContent(this.elements.category, value);

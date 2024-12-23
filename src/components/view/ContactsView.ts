@@ -53,47 +53,6 @@ export class ContactsView implements IContacts {
 			e.preventDefault();
 			this.events.emit('contacts:submit');
 		});
-
-		// Add phone input handling
-		const phoneInput = this._form.querySelector(
-			'input[name="phone"]'
-		) as HTMLInputElement;
-		phoneInput.value = '+7';
-
-		phoneInput.addEventListener('input', this.handlePhoneInput.bind(this));
-		phoneInput.addEventListener('keydown', (e) => {
-			if (
-				e.key === 'Backspace' &&
-				(e.target as HTMLInputElement).selectionStart <= 2
-			) {
-				e.preventDefault();
-			}
-		});
-	}
-
-	/**
-	 * Handles phone input formatting and validation
-	 * @param e - Input event
-	 */
-	private handlePhoneInput(e: Event): void {
-		const input = e.target as HTMLInputElement;
-		let value = input.value.replace(/\D/g, '');
-
-		if (value.length > 11) {
-			value = value.slice(0, 11);
-		}
-
-		let formatted = '+7';
-		if (value.length > 1) formatted += ` ${value.slice(1, 4)}`;
-		if (value.length > 4) formatted += ` ${value.slice(4, 7)}`;
-		if (value.length > 7) formatted += ` ${value.slice(7, 9)}`;
-		if (value.length > 9) formatted += ` ${value.slice(9)}`;
-
-		input.value = formatted;
-		this.events.emit('contacts:changeInput', {
-			field: input.name,
-			value: formatted,
-		});
 	}
 
 	set error(value: string) {

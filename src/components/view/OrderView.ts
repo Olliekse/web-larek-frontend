@@ -6,6 +6,7 @@ export interface IOrder {
 	valid: boolean;
 	error: string;
 	resetForm(): void;
+	updatePaymentButtons(selectedPayment: string): void;
 }
 
 export class Order implements IOrder {
@@ -36,7 +37,7 @@ export class Order implements IOrder {
 
 		this._paymentButtons.forEach((button) => {
 			button.addEventListener('click', () => {
-				this.handlePayment(button);
+				this.events.emit('order:paymentSelection', { payment: button.name });
 			});
 		});
 
@@ -73,12 +74,14 @@ export class Order implements IOrder {
 		});
 	}
 
-	private handlePayment(button: HTMLButtonElement): void {
+	updatePaymentButtons(selectedPayment: string): void {
 		this._paymentButtons.forEach((btn) => {
-			this.domService.removeClass(btn, 'button_alt-active');
+			if (btn.name === selectedPayment) {
+				this.domService.addClass(btn, 'button_alt-active');
+			} else {
+				this.domService.removeClass(btn, 'button_alt-active');
+			}
 		});
-		this.domService.addClass(button, 'button_alt-active');
-		this.events.emit('order:paymentSelection', { payment: button.name });
 	}
 
 	private handleInput(e: Event): void {

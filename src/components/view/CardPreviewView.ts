@@ -2,8 +2,7 @@ import { Card, IActions } from './CardView';
 import { IProduct } from '../../types';
 import { IEvents } from '../base/events';
 import { IDOMService } from '../../services/DOMService';
-import { StateService } from '../../services/StateService';
-import { API_CONFIG } from '../../config/api.config';
+import { AppState } from '../model/AppState';
 
 interface CardElement extends HTMLElement {
 	__cardInstance?: CardPreview;
@@ -31,7 +30,7 @@ export class CardPreview extends Card {
 		template: HTMLTemplateElement,
 		protected events: IEvents,
 		protected domService: IDOMService,
-		protected stateService: StateService,
+		protected appState: AppState,
 		protected actions?: IActions
 	) {
 		super(template, events, domService, actions);
@@ -175,7 +174,7 @@ export class CardPreview extends Card {
 			'card__button',
 		]);
 
-		const isInCart = this.stateService.isProductInCart(data.id);
+		const isInCart = this.appState.isProductInCart(data.id);
 		const canBePurchased = data.price !== undefined && data.price !== null;
 
 		const buttonState = this.getButtonState(isInCart, canBePurchased);

@@ -2,14 +2,16 @@ import { BasePresenter } from '../base/presenter';
 import { IFormModel } from '../model/FormModel';
 import { IContacts } from '../view/ContactsView';
 import { IEvents } from '../base/events';
-import { StateService } from '../../services/StateService';
+import { AppState } from '../model/AppState';
+import { IProductApi } from '../../services/api/ProductApi';
 
 /** Handles contact form logic and validation */
 export class ContactsPresenter extends BasePresenter {
 	constructor(
 		private formModel: IFormModel,
 		private view: IContacts,
-		private stateService: StateService,
+		private appState: AppState,
+		private api: IProductApi,
 		events: IEvents
 	) {
 		super(events);
@@ -30,36 +32,40 @@ export class ContactsPresenter extends BasePresenter {
 		this.validateForm();
 	}
 
-	private handleSubmit(): void {
+	private async handleSubmit(): Promise<void> {
 		if (this.formModel.validateContacts()) {
-			const cart = this.stateService.getCart();
-			this.formModel.total = cart.total;
-			this.formModel.items = cart.items.map((item) => item.id);
+			const cart = this.appState.getCart();
 
-			const successContent = document
-				.querySelector<HTMLTemplateElement>('#success')
-				.content.cloneNode(true) as HTMLElement;
+			try {
+				await this.api.orderProducts(this.formModel.getOrderLot());
+				this.appState.clearCart();
 
-			const totalElement = successContent.querySelector(
-				'.order-success__description'
-			);
-			if (totalElement) {
-				totalElement.textContent = `Списано ${cart.total} синапсов`;
+				const successContent = document
+					.querySelector<HTMLTemplateElement>('#success')
+					.content.cloneNode(true) as HTMLElement;
+
+				const totalElement = successContent.querySelector(
+					'.order-success__description'
+				);
+				if (totalElement) {
+					totalElement.textContent = `Списано ${cart.total} синапсов`;
+				}
+
+				const successButton = successContent.querySelector(
+					'.order-success__close'
+				);
+				if (successButton) {
+					successButton.addEventListener('click', () => {
+						this.appState.closeModal();
+					});
+				}
+
+				this.appState.openModal(successContent, 'Заказ оформлен');
+				this.view.resetForm();
+				this.formModel.resetForm();
+			} catch (error) {
+				this.view.error = 'Произошла ошибка при оформлении заказа';
 			}
-
-			const successButton = successContent.querySelector(
-				'.order-success__close'
-			);
-			if (successButton) {
-				successButton.addEventListener('click', () => {
-					this.stateService.closeModal();
-					this.stateService.clearCart();
-				});
-			}
-
-			this.stateService.openModal(successContent, 'Заказ оформлен');
-			this.view.resetForm();
-			this.formModel.resetForm();
 		}
 	}
 
