@@ -237,9 +237,9 @@ web-larek-frontend/
 
 ### Models
 
-1. **StateService**
+1. **AppState**
 
-   - **Purpose**: Acts as a central state management system for the entire application, maintaining product data, cart state, loading states, and modal visibility. Ensures consistent state updates and notifications across components.
+   - **Purpose**: Acts as a central state management system for the entire application, maintaining product data, cart state, loading states, and modal visibility. Ensures consistent state updates and notifications across components. Located in the models directory as the single source of truth.
    - **Fields**:
      - `private products: IProduct[]` - Product list storage
      - `private cart: CartState` - Cart state storage
@@ -251,7 +251,6 @@ web-larek-frontend/
      - `addToCart(product: IProduct): void` - Adds product to cart
      - `removeFromCart(productId: string): void` - Removes cart item
      - `getCart(): CartState` - Gets current cart state
-     - `synchroniseState(): void` - Synchronises state with cart
 
 2. **FormModel**
 
@@ -283,30 +282,27 @@ web-larek-frontend/
 
 ### Views
 
-1. **CardPreview**
+1. **BaseCard**
 
-   - **Purpose**: Provides an interactive product display component that handles both gallery and modal views, managing product information presentation and user interactions with cart functionality.
-   - **Constructor**:
-     ```typescript
-     constructor(
-         template: HTMLTemplateElement,
-         protected events: IEvents,
-         protected domService: IDOMService,
-         protected stateService: StateService,
-         protected actions?: IActions
-     )
-     ```
+   - **Purpose**: Provides a reusable foundation for all card components, handling common DOM manipulation and template management. Parent class for specific card implementations.
    - **Fields**:
-     - `protected elements: { card: HTMLElement }` - Base card element
-     - `protected button: HTMLButtonElement` - Cart action button
-     - `private currentProduct: IProduct` - Currently displayed product
+     - `protected elements: CardElements` - DOM element references
+     - `protected template: HTMLTemplateElement` - Card template
+     - `protected domService: IDOMService` - DOM manipulation service
    - **Methods**:
-     - `protected initializeElements(): void` - Sets up card elements
-     - `render(data: IProduct): HTMLElement` - Creates product card
-     - `updateButtonState(isInCart: boolean, canBePurchased: boolean): void` - Updates button
-     - `renderModal(data: IProduct): HTMLElement` - Creates modal view
+     - `protected initializeElements(): void` - Sets up DOM element references
+     - `render(data: IProduct): HTMLElement` - Creates card element
 
-2. **Cart**
+2. **CartItemCard**
+
+   - **Purpose**: Extends BaseCard to provide specific functionality for cart items. Uses template-based rendering and handles only UI interactions.
+   - **Fields**:
+     - `private readonly elements: CartItemElements` - Cart-specific DOM elements
+   - **Methods**:
+     - `render(data: IProduct): HTMLElement` - Renders cart item
+     - `setIndex(value: number): void` - Updates item index display
+
+3. **Cart**
 
    - **Purpose**: Delivers a comprehensive shopping cart interface that manages item display, total calculation, and checkout process initiation. Provides real-time updates of cart state.
    - **Fields**:
@@ -320,7 +316,7 @@ web-larek-frontend/
      - `renderSumAllProducts(total: number): void` - Updates total price
      - `renderHeaderCartCounter(count: number): void` - Updates cart counter
 
-3. **OrderForm**
+4. **OrderForm**
 
    - **Purpose**: Facilitates the order completion process with address input, payment method selection, and form validation. Guides users through the checkout flow with appropriate feedback.
    - **Fields**:
@@ -334,7 +330,7 @@ web-larek-frontend/
      - `private handleSubmit(): void` - Processes form submission
      - `showSuccess(): void` - Displays success message
 
-4. **ModalView**
+5. **ModalView**
 
    - **Purpose**: Implements a flexible modal window system that can display various types of content with consistent styling and behavior. Manages modal lifecycle and content updates.
    - **Fields**:
@@ -348,7 +344,7 @@ web-larek-frontend/
      - `setContent(content: HTMLElement): void` - Updates modal content
      - `centreContent(): void` - Centres modal content
 
-5. **ContactsView**
+6. **ContactsView**
    - **Purpose**: Pure view component for contact form display. Handles only UI rendering and user input capture, delegating all data processing to the model.
    - **Fields**:
      - `private _form: HTMLFormElement` - Form element
