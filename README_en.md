@@ -83,6 +83,9 @@ The application is divided into three main layers:
 
    - Clear boundaries between layers
    - Each layer has a single responsibility
+   - DOM manipulation is centralized in Views
+   - Presenters focus purely on business logic
+   - Views receive DOM elements through constructors
 
 2. **Testability**
 
@@ -576,8 +579,10 @@ Key features of the API layer:
 
 1. **Component Development**
 
-   - Follow MVP pattern
-   - Use TypeScript interfaces
+   - Follow MVP pattern strictly
+   - Keep DOM manipulation in View layer only
+   - Pass DOM elements through constructors rather than querying them directly
+   - Use TypeScript interfaces for better type safety
    - Implement event-driven communication
    - Keep computed properties in getters rather than storing values
    - Use protected/private fields for better encapsulation
@@ -703,14 +708,20 @@ class FormModel {
 
 ```typescript
 class CardView extends Card {
-	protected initializeElements(): void {
-		this.elements.card.addEventListener('click', () => {
-			this.events.emit('card:select', this.currentProduct);
-		});
+	constructor(
+		template: HTMLTemplateElement,
+		protected events: IEvents,
+		protected domService: IDOMService,
+		protected container: HTMLElement
+	) {
+		super();
+		this.initializeElements();
 	}
 
-	renderModal(product: IProduct): HTMLElement {
-		return this.templator.compile(product, 'modal-card');
+	protected initializeElements(): void {
+		this.container.addEventListener('click', () => {
+			this.events.emit('card:select', this.currentProduct);
+		});
 	}
 }
 ```
@@ -719,9 +730,14 @@ class CardView extends Card {
 
 ```typescript
 class ProductPresenter extends BasePresenter {
-	constructor(private modalPresenter: ModalPresenter, private view: CardView) {
-		super();
-		this.events.on('card:select', this.handleProductSelect.bind(this));
+	constructor(
+		private appState: AppState,
+		private view: CardView,
+		private api: ProductApi,
+		events: IEvents,
+		private gallery: HTMLElement
+	) {
+		super(events);
 	}
 
 	private handleProductSelect(product: IProduct): void {
