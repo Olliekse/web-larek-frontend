@@ -20,6 +20,16 @@ export class OrderPresenter extends BasePresenter {
 			this.handlePaymentSelection(data.payment);
 		});
 
+		this.events.on(
+			'formData:changed',
+			(data: { field: string; value: string }) => {
+				if (data.field === 'payment') {
+					this.view.setPaymentState(this.formModel.getPayment());
+				}
+				this.validateOrder();
+			}
+		);
+
 		this.events.on('order:changeAddress', this.handleAddressChange.bind(this));
 		this.events.on('order:submit', this.handleSubmit.bind(this));
 		this.events.on('formErrors:address', this.handleFormErrors.bind(this));
@@ -33,10 +43,6 @@ export class OrderPresenter extends BasePresenter {
 
 	private handlePaymentSelection(payment: string): void {
 		this.formModel.setPayment(payment);
-		if (this.formModel.validateOrder()) {
-			this.view.updatePaymentButtons(payment);
-			this.validateOrder();
-		}
 	}
 
 	private handleAddressChange({
@@ -47,7 +53,6 @@ export class OrderPresenter extends BasePresenter {
 		value: string;
 	}): void {
 		this.formModel.setOrderAddress(field, value);
-		this.validateOrder();
 	}
 
 	private handleSubmit(): void {

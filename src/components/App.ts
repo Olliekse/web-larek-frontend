@@ -65,7 +65,7 @@ export class App {
 	private initializeApp(): void {
 		const api = new ProductApi(API_CONFIG.CDN_URL, API_CONFIG.API_URL);
 
-		const formModel = new FormModel(this.events, this.appState);
+		const formModel = new FormModel(this.events);
 
 		const templates = {
 			cart: this.getTemplate('#basket'),
@@ -82,7 +82,6 @@ export class App {
 			templates.cart,
 			this.events,
 			this.domService,
-			templates.cartItem,
 			headerButton,
 			headerCounter
 		);
@@ -113,7 +112,9 @@ export class App {
 		this.cartPresenter = new CartPresenter(
 			this.appState,
 			cartView,
-			this.events
+			this.events,
+			this.domService,
+			templates.cartItem
 		);
 		this.orderPresenter = new OrderPresenter(
 			formModel,

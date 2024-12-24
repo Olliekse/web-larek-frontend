@@ -19,18 +19,17 @@ interface CartItemElements {
 /** Represents a cart item card with product information */
 export class CartItemCard extends BaseCard {
 	protected _container: HTMLElement;
-	private readonly elements: CartItemElements;
+	protected readonly elements: CartItemElements;
 
 	constructor(
 		container: HTMLElement,
+		template: HTMLTemplateElement,
 		events: IEvents,
 		domService: IDOMService,
 		actions?: { onClick: (event: MouseEvent) => void }
 	) {
 		super(events, domService, actions);
 
-		const template =
-			document.querySelector<HTMLTemplateElement>('#card-basket');
 		if (!template) {
 			throw new Error('Card basket template not found');
 		}

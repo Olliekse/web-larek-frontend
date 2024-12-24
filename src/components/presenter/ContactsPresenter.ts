@@ -35,36 +35,51 @@ export class ContactsPresenter extends BasePresenter {
 	private async handleSubmit(): Promise<void> {
 		if (this.formModel.validateContacts()) {
 			const cart = this.appState.getCart();
+			const orderData = {
+				items: cart.items.map((item) => item.id),
+				total: cart.total,
+			};
 
 			try {
-				await this.api.orderProducts(this.formModel.getOrderLot());
-				this.appState.clearCart();
-
-				const successContent = document
-					.querySelector<HTMLTemplateElement>('#success')
-					.content.cloneNode(true) as HTMLElement;
-
-				const totalElement = successContent.querySelector(
-					'.order-success__description'
+				const response = await this.api.orderProducts(
+					this.formModel.getOrderLot(orderData)
 				);
-				if (totalElement) {
-					totalElement.textContent = `Списано ${cart.total} синапсов`;
-				}
 
-				const successButton = successContent.querySelector(
-					'.order-success__close'
-				);
-				if (successButton) {
-					successButton.addEventListener('click', () => {
-						this.appState.closeModal();
-					});
-				}
+				if (response && response.id) {
+					this.appState.clearCart();
 
-				this.appState.openModal(successContent, 'Заказ оформлен');
-				this.view.resetForm();
-				this.formModel.resetForm();
+					const successContent = document
+						.querySelector<HTMLTemplateElement>('#success')
+						.content.cloneNode(true) as HTMLElement;
+
+					const totalElement = successContent.querySelector(
+						'.order-success__description'
+					);
+					if (totalElement) {
+						totalElement.textContent = `Списано ${cart.total} синапсов`;
+					}
+
+					const successButton = successContent.querySelector(
+						'.order-success__close'
+					);
+					if (successButton) {
+						successButton.addEventListener('click', () => {
+							this.appState.closeModal();
+						});
+					}
+
+					this.appState.openModal(successContent, 'Заказ оформлен');
+					this.view.resetForm();
+					this.formModel.resetForm();
+				} else {
+					this.view.error = 'Ошибка сервера: неверный формат ответа';
+				}
 			} catch (error) {
-				this.view.error = 'Произошла ошибка при оформлении заказа';
+				if (error instanceof Error) {
+					this.view.error = `Ошибка: ${error.message}`;
+				} else {
+					this.view.error = 'Произошла ошибка при оформлении заказа';
+				}
 			}
 		}
 	}

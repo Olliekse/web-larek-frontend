@@ -6,7 +6,7 @@ import { IDOMService } from '../../services/DOMService';
 /** Interface for cart functionality */
 export interface ICart {
 	/** Renders the cart items */
-	renderItems(items: IProduct[]): void;
+	renderItems(elements: HTMLElement[]): void;
 	/** Updates the cart counter in header */
 	renderHeaderCartCounter(count: number): void;
 	/** Updates total sum display */
@@ -26,7 +26,6 @@ export class Cart implements ICart {
 		headerButton: HTMLElement;
 		headerCounter: HTMLElement;
 	};
-	protected readonly itemTemplate: HTMLTemplateElement;
 	private cartElement: HTMLElement;
 
 	/**
@@ -34,7 +33,6 @@ export class Cart implements ICart {
 	 * @param template - Cart template
 	 * @param events - Event emitter
 	 * @param domService - DOM service
-	 * @param itemTemplate - Template for cart items
 	 * @param headerButton - Header cart button element
 	 * @param headerCounter - Header cart counter element
 	 */
@@ -42,11 +40,9 @@ export class Cart implements ICart {
 		template: HTMLTemplateElement,
 		protected events: IEvents,
 		protected domService: IDOMService,
-		itemTemplate: HTMLTemplateElement,
 		headerButton: HTMLElement,
 		headerCounter: HTMLElement
 	) {
-		this.itemTemplate = itemTemplate;
 		this.cartElement = template.content
 			.querySelector('.basket')
 			.cloneNode(true) as HTMLElement;
@@ -92,10 +88,10 @@ export class Cart implements ICart {
 
 	/**
 	 * Renders the cart items
-	 * @param items - Array of products in cart
+	 * @param elements - Array of cart item elements
 	 */
-	renderItems(items: IProduct[]): void {
-		if (!items.length) {
+	renderItems(elements: HTMLElement[]): void {
+		if (!elements.length) {
 			this.elements.button.setAttribute('disabled', 'disabled');
 			const emptyMessage = this.domService.createElement('p');
 			this.domService.setContent(emptyMessage, 'Корзина пуста');
@@ -103,21 +99,7 @@ export class Cart implements ICart {
 			return;
 		}
 
-		const cartItems = items.map((item, index) => {
-			const cartItem = new CartItemCard(
-				this.itemTemplate,
-				this.events,
-				this.domService,
-				{
-					onClick: () => this.events.emit('cart:removeItem', item),
-				}
-			);
-			const element = cartItem.render(item);
-			cartItem.setIndex(index + 1);
-			return element;
-		});
-
-		this.elements.list.replaceChildren(...cartItems);
+		this.elements.list.replaceChildren(...elements);
 		this.elements.button.removeAttribute('disabled');
 	}
 

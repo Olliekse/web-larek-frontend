@@ -1,19 +1,23 @@
 import { IEvents } from '../base/events';
 import { IProduct } from '../../types';
 
+interface ICart {
+	items: IProduct[];
+	total: number;
+}
+
+interface IModal {
+	isOpen: boolean;
+	content?: HTMLElement;
+	title?: string;
+}
+
 export interface IAppState {
-	cart: {
-		items: IProduct[];
-		total: number;
-	};
-	modal: {
-		isOpen: boolean;
-		content?: HTMLElement;
-		title?: string;
-	};
-	products: IProduct[];
-	loading: LoadingState;
-	error: string | null;
+	getCart(): ICart;
+	getModal(): IModal;
+	getProducts(): IProduct[];
+	getLoading(): LoadingState;
+	getError(): string | null;
 }
 
 export type LoadingState = {
@@ -23,35 +27,33 @@ export type LoadingState = {
 };
 
 /** Manages application state and data */
-export class AppState {
-	private state: IAppState = {
+export class AppState implements IAppState {
+	private state = {
 		cart: {
-			items: [],
-			total: 0,
+			items: [] as IProduct[],
 		},
 		modal: {
 			isOpen: false,
-		},
-		products: [],
+		} as IModal,
+		products: [] as IProduct[],
 		loading: {
 			products: false,
 			order: false,
 			cart: false,
 		},
-		error: null,
+		error: null as string | null,
 	};
 
 	constructor(private events: IEvents) {
 		const savedCart = localStorage.getItem('cartProducts');
 		if (savedCart) {
 			this.state.cart.items = JSON.parse(savedCart);
-			this.updateCartTotal();
-			this.events.emit('state:cart:changed', this.state.cart);
+			this.events.emit('state:cart:changed', this.getCart());
 		}
 	}
 
-	private updateCartTotal(): void {
-		this.state.cart.total = this.state.cart.items.reduce(
+	private calculateCartTotal(): number {
+		return this.state.cart.items.reduce(
 			(sum, item) => sum + (item.price || 0),
 			0
 		);
@@ -60,10 +62,9 @@ export class AppState {
 	addToCart(product: IProduct): void {
 		if (!this.state.cart.items.some((item) => item.id === product.id)) {
 			this.state.cart.items.push(product);
-			this.updateCartTotal();
 			this.saveCartToStorage();
-			this.events.emit('state:cart:changed', this.state.cart);
-			this.events.emit('cart:changed', this.state.cart.items);
+			this.events.emit('state:cart:changed', this.getCart());
+			this.events.emit('cart:changed', [...this.state.cart.items]);
 		}
 	}
 
@@ -71,16 +72,14 @@ export class AppState {
 		this.state.cart.items = this.state.cart.items.filter(
 			(item) => item.id !== productId
 		);
-		this.updateCartTotal();
 		this.saveCartToStorage();
-		this.events.emit('state:cart:changed', this.state.cart);
+		this.events.emit('state:cart:changed', this.getCart());
 	}
 
 	clearCart(): void {
 		this.state.cart.items = [];
-		this.state.cart.total = 0;
 		localStorage.removeItem('cartProducts');
-		this.events.emit('state:cart:changed', this.state.cart);
+		this.events.emit('state:cart:changed', this.getCart());
 		this.events.emit('form:reset');
 	}
 
@@ -90,29 +89,44 @@ export class AppState {
 
 	openModal(content: HTMLElement, title?: string): void {
 		this.state.modal = { isOpen: true, content, title };
-		this.events.emit('state:modal:changed', this.state.modal);
+		this.events.emit('state:modal:changed', this.getModal());
 	}
 
 	closeModal(): void {
 		this.state.modal = { isOpen: false };
-		this.events.emit('state:modal:changed', this.state.modal);
+		this.events.emit('state:modal:changed', this.getModal());
 	}
 
 	setProducts(products: IProduct[]): void {
-		this.state.products = products;
-		this.events.emit('state:products:changed', this.state.products);
+		this.state.products = [...products];
+		this.events.emit('state:products:changed', this.getProducts());
 	}
 
-	getState(): IAppState {
+	getState(): Readonly<typeof this.state> {
 		return { ...this.state };
 	}
 
-	getCart() {
-		return { ...this.state.cart };
+	getCart(): ICart {
+		return {
+			items: [...this.state.cart.items],
+			total: this.calculateCartTotal(),
+		};
 	}
 
-	getProducts() {
+	getModal(): IModal {
+		return { ...this.state.modal };
+	}
+
+	getProducts(): IProduct[] {
 		return [...this.state.products];
+	}
+
+	getLoading(): LoadingState {
+		return { ...this.state.loading };
+	}
+
+	getError(): string | null {
+		return this.state.error;
 	}
 
 	isProductInCart(productId: string): boolean {
@@ -124,7 +138,7 @@ export class AppState {
 		this.events.emit('state:loading', {
 			type,
 			value,
-			isAnyLoading: Object.values(this.state.loading).some(Boolean),
+			isAnyLoading: this.isAnyLoading(),
 		});
 	}
 

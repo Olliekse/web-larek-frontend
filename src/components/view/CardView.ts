@@ -14,6 +14,11 @@ export interface ICard {
 
 /** Base abstract class for all card components */
 export abstract class BaseCard implements ICard {
+	protected elements: {
+		title?: HTMLElement;
+		price?: HTMLElement;
+	} = {};
+
 	constructor(
 		protected events: IEvents,
 		protected domService: IDOMService,
@@ -27,6 +32,23 @@ export abstract class BaseCard implements ICard {
 			return 'Бесценно';
 		}
 		return `${price} синапсов`;
+	}
+
+	protected initializeCommonElements(container: HTMLElement): void {
+		this.elements.title = container.querySelector('.card__title');
+		this.elements.price = container.querySelector('.card__price');
+	}
+
+	protected renderCommonElements(data: IProduct): void {
+		if (this.elements.title) {
+			this.domService.setContent(this.elements.title, data.title);
+		}
+		if (this.elements.price) {
+			this.domService.setContent(
+				this.elements.price,
+				this.formatPrice(data.price)
+			);
+		}
 	}
 }
 
@@ -68,9 +90,8 @@ export class Card extends BaseCard {
 	protected initializeElements(): void {
 		const { card } = this.elements;
 		this.elements.category = card.querySelector('.card__category');
-		this.elements.title = card.querySelector('.card__title');
+		this.initializeCommonElements(card);
 		this.elements.image = card.querySelector('.card__image');
-		this.elements.price = card.querySelector('.card__price');
 	}
 
 	render(data: IProduct): HTMLElement {
@@ -78,9 +99,7 @@ export class Card extends BaseCard {
 		const category = cardElement.querySelector(
 			'.card__category'
 		) as HTMLElement;
-		const title = cardElement.querySelector('.card__title') as HTMLElement;
 		const image = cardElement.querySelector('.card__image') as HTMLImageElement;
-		const price = cardElement.querySelector('.card__price') as HTMLElement;
 
 		this.domService.setContent(category, data.category);
 		this.domService.addClass(
@@ -88,12 +107,13 @@ export class Card extends BaseCard {
 			`card__category_${this.getCategoryClass(data.category)}`
 		);
 
-		this.domService.setContent(title, data.title);
 		this.domService.setAttributes(image, {
 			src: data.image,
 			alt: data.title,
 		});
-		this.domService.setContent(price, this.formatPrice(data.price));
+
+		this.initializeCommonElements(cardElement);
+		this.renderCommonElements(data);
 
 		return cardElement;
 	}

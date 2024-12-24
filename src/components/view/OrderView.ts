@@ -6,7 +6,7 @@ export interface IOrder {
 	valid: boolean;
 	error: string;
 	resetForm(): void;
-	updatePaymentButtons(selectedPayment: string): void;
+	setPaymentState(payment: string): void;
 }
 
 export class Order implements IOrder {
@@ -55,6 +55,16 @@ export class Order implements IOrder {
 		return this._form;
 	}
 
+	setPaymentState(payment: string): void {
+		this._paymentButtons.forEach((btn) => {
+			if (btn.name === payment) {
+				this.domService.addClass(btn, 'button_alt-active');
+			} else {
+				this.domService.removeClass(btn, 'button_alt-active');
+			}
+		});
+	}
+
 	set valid(value: boolean) {
 		if (value) {
 			this._button.removeAttribute('disabled');
@@ -71,16 +81,6 @@ export class Order implements IOrder {
 		this._address.value = '';
 		this._paymentButtons.forEach((button) => {
 			this.domService.removeClass(button, 'button_alt-active');
-		});
-	}
-
-	updatePaymentButtons(selectedPayment: string): void {
-		this._paymentButtons.forEach((btn) => {
-			if (btn.name === selectedPayment) {
-				this.domService.addClass(btn, 'button_alt-active');
-			} else {
-				this.domService.removeClass(btn, 'button_alt-active');
-			}
 		});
 	}
 

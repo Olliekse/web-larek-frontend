@@ -86,8 +86,7 @@ export class ProductPresenter extends BasePresenter {
 
 	private handleProductsReceived(): void {
 		if (!this.gallery) {
-			console.error('Gallery element not found');
-			return;
+			throw new Error('Gallery element not found');
 		}
 
 		try {

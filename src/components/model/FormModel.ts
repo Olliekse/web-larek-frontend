@@ -1,9 +1,13 @@
 import { IEvents } from '../base/events';
 import { IOrder } from '../../types';
-import { AppState } from './AppState';
 
 interface FormErrors {
 	[key: string]: string;
+}
+
+export interface IOrderData {
+	items: string[];
+	total: number;
 }
 
 export interface IFormModel {
@@ -16,7 +20,7 @@ export interface IFormModel {
 	validateOrder(): boolean;
 	setOrderData(field: string, value: string): void;
 	validateContacts(): boolean;
-	getOrderLot(): IOrder;
+	getOrderLot(orderData: IOrderData): IOrder;
 	resetForm(): void;
 }
 
@@ -28,7 +32,7 @@ export class FormModel implements IFormModel {
 	protected address: string;
 	protected formErrors: FormErrors = {};
 
-	constructor(protected events: IEvents, protected appState: AppState) {
+	constructor(protected events: IEvents) {
 		this.payment = '';
 		this.email = '';
 		this.phone = '';
@@ -53,36 +57,62 @@ export class FormModel implements IFormModel {
 
 	setPayment(value: string): void {
 		this.payment = value;
+		this.events.emit('formData:changed', {
+			field: 'payment',
+			value,
+			isValid: !!value,
+		});
 	}
 
 	protected setEmail(value: string): void {
 		this.email = value;
+		this.events.emit('formData:changed', {
+			field: 'email',
+			value,
+			isValid: !!value.trim(),
+		});
 	}
 
 	protected setPhone(value: string): void {
 		this.phone = value;
+		this.events.emit('formData:changed', {
+			field: 'phone',
+			value,
+			isValid: !!value.trim(),
+		});
 	}
 
 	protected setAddress(value: string): void {
 		this.address = value;
+		this.events.emit('formData:changed', {
+			field: 'address',
+			value,
+			isValid: !!value.trim(),
+		});
 	}
 
 	setOrderAddress(field: string, value: string): void {
 		if (field === 'address') {
 			this.setAddress(value);
 		}
+	}
 
-		if (this.validateOrder()) {
-			this.events.emit('order:ready', this.getOrderLot());
+	setOrderData(field: string, value: string): void {
+		if (field === 'phone') {
+			this.setPhone(value);
+		} else if (field === 'email') {
+			this.setEmail(value);
 		}
 	}
 
 	validateOrder(): boolean {
 		const errors: typeof this.formErrors = {};
 
-		if (!this.getAddress()) {
+		if (!this.getAddress().trim()) {
 			errors.address = 'Необходимо указать адрес';
-		} else if (!this.getPayment()) {
+		}
+
+		if (!this.getPayment()) {
 			errors.payment = 'Выберите способ оплаты';
 		}
 
@@ -91,55 +121,30 @@ export class FormModel implements IFormModel {
 		return Object.keys(errors).length === 0;
 	}
 
-	setOrderData(field: string, value: string): void {
-		if (field === 'phone') {
-			let formattedPhone = value;
-
-			// Allow plus sign only at the start
-			if (formattedPhone.startsWith('+')) {
-				formattedPhone = '+' + formattedPhone.slice(1).replace(/\D/g, '');
-			} else {
-				formattedPhone = formattedPhone.replace(/\D/g, '');
-			}
-
-			// Group digits for better readability
-			if (formattedPhone.length > 0) {
-				const groups = formattedPhone.match(/.{1,3}/g) || [];
-				formattedPhone = groups.join(' ');
-			}
-
-			this.setPhone(formattedPhone);
-		} else if (field === 'email') {
-			this.setEmail(value);
-		}
-
-		if (this.validateContacts()) {
-			this.events.emit('order:ready', this.getOrderLot());
-		}
-	}
-
 	validateContacts(): boolean {
 		const errors: typeof this.formErrors = {};
 
-		if (!this.getEmail() || !this.getPhone()) {
-			errors.contacts = 'Необходимо указать email и телефон';
+		if (!this.getEmail().trim()) {
+			errors.email = 'Необходимо указать email';
+		}
+
+		if (!this.getPhone().trim()) {
+			errors.phone = 'Необходимо указать телефон';
 		}
 
 		this.formErrors = errors;
 		this.events.emit('formErrors:change', this.formErrors);
-
-		return this.getEmail().length > 0 && this.getPhone().length > 0;
+		return Object.keys(errors).length === 0;
 	}
 
-	getOrderLot(): IOrder {
-		const cart = this.appState.getCart();
+	getOrderLot(orderData: IOrderData): IOrder {
 		return {
 			payment: this.getPayment(),
 			email: this.getEmail(),
 			phone: this.getPhone(),
 			address: this.getAddress(),
-			total: cart.total,
-			items: cart.items.map((item) => item.id),
+			total: orderData.total,
+			items: orderData.items,
 		};
 	}
 
