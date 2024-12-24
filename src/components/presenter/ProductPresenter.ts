@@ -8,16 +8,18 @@ import { ApiError } from '../../services/api/BaseApi';
 
 /** Handles product display and interactions */
 export class ProductPresenter extends BasePresenter {
-	private gallery: HTMLElement;
-
 	constructor(
 		private appState: AppState,
 		private view: CardPreview,
 		private api: ProductApi,
-		events: IEvents
+		events: IEvents,
+		private gallery: HTMLElement
 	) {
 		super(events);
-		this.gallery = document.querySelector('.gallery');
+
+		if (!this.gallery) {
+			throw new Error('Gallery element not found');
+		}
 
 		this.events.on(
 			'state:products:changed',
@@ -85,10 +87,6 @@ export class ProductPresenter extends BasePresenter {
 	}
 
 	private handleProductsReceived(): void {
-		if (!this.gallery) {
-			throw new Error('Gallery element not found');
-		}
-
 		try {
 			const products = this.appState.getProducts();
 			this.gallery.innerHTML = '';

@@ -12,7 +12,8 @@ export class ContactsPresenter extends BasePresenter {
 		private view: IContacts,
 		private appState: AppState,
 		private api: IProductApi,
-		events: IEvents
+		events: IEvents,
+		private successTemplate: HTMLTemplateElement
 	) {
 		super(events);
 
@@ -48,9 +49,9 @@ export class ContactsPresenter extends BasePresenter {
 				if (response && response.id) {
 					this.appState.clearCart();
 
-					const successContent = document
-						.querySelector<HTMLTemplateElement>('#success')
-						.content.cloneNode(true) as HTMLElement;
+					const successContent = this.successTemplate.content.cloneNode(
+						true
+					) as HTMLElement;
 
 					const totalElement = successContent.querySelector(
 						'.order-success__description'

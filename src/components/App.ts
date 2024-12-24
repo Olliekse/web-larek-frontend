@@ -25,11 +25,20 @@ export class App {
 	private readonly events: EventEmitter;
 	private readonly domService: DOMService;
 	private readonly appState: AppState;
+	private readonly gallery: HTMLElement;
+	private readonly modalElement: HTMLElement;
+	private readonly pageWrapper: HTMLElement;
 
 	constructor() {
 		this.events = new EventEmitter();
 		this.domService = new DOMService();
 		this.appState = new AppState(this.events);
+
+		// Get DOM elements once
+		this.gallery = this.getElement('.gallery');
+		this.modalElement = this.getElement('.modal');
+		this.pageWrapper = this.getElement('.page__wrapper');
+
 		this.initializeApp();
 	}
 
@@ -73,6 +82,7 @@ export class App {
 			order: this.getTemplate('#order'),
 			contacts: this.getTemplate('#contacts'),
 			card: this.getTemplate('#card-catalog'),
+			success: this.getTemplate('#success'),
 		};
 
 		const headerButton = this.getElement('.header__basket');
@@ -93,7 +103,8 @@ export class App {
 		);
 
 		const modalView = new ModalView(
-			document.querySelector('.modal'),
+			this.modalElement,
+			this.pageWrapper,
 			this.events
 		);
 		const cardView = new CardPreview(
@@ -128,13 +139,15 @@ export class App {
 			contactsView,
 			this.appState,
 			api,
-			this.events
+			this.events,
+			templates.success
 		);
 		this.productPresenter = new ProductPresenter(
 			this.appState,
 			cardView,
 			api,
-			this.events
+			this.events,
+			this.gallery
 		);
 
 		this.setupOrderFlow(orderView, modalView);
