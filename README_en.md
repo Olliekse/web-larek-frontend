@@ -537,27 +537,31 @@ web-larek-frontend/
 ### 🛒 Cart Events
 
 - `cart:open` - Open cart modal
-- `cart:changed` - Cart contents have changed
+- `cart:changed` - Cart contents changed
 - `cart:removeItem` - Request to remove item from cart
 - `cart:state:get` - Request current cart state
 
 ### 🔲 Modal Events
 
-- `modal:open` - Open modal window with content
-- `modal:close` - Close modal window
+- `modal:open` - Open modal with content
+- `modal:close` - Close modal
 - `modal:update` - Update modal content
+- `state:modal:changed` - Modal state has changed
 
 ### 🏷️ Product Events
 
 - `card:select` - Product card selected
 - `card:addCart` - Request to add product to cart
+- `state:products:changed` - Product list updated
 
 ### 📝 Form Events
 
-- `order:ready` - Order form is valid and ready
-- `order:submit` - Order form submitted
-- `order:open` - Open order form
+- `contacts:changeInput` - Contact form input changed
+- `contacts:submit` - Contact form submitted
+- `formErrors:change` - Form validation errors updated
 - `order:paymentSelection` - Payment method selected
+- `order:changeAddress` - Delivery address changed
+- `form:reset` - Reset form state
 
 ## API Layer
 
@@ -577,28 +581,59 @@ Key features of the API layer:
 
 ## Development Guidelines
 
-1. **Component Development**
+1. **DOM Manipulation**
+
+   - **Centralization**:
+
+     - All DOM queries are centralized in the `App` class
+     - Elements are passed through constructors to components
+     - Direct `querySelector` usage is prohibited in components
+
+   - **DOMService Usage**:
+     ```typescript
+     class SomeView {
+     	constructor(
+     		protected container: HTMLElement,
+     		protected domService: IDOMService
+     	) {
+     		// Use domService instead of direct DOM manipulation
+     		this.domService.createElement('div', 'class-name');
+     		this.domService.setContent(element, content);
+     		this.domService.addClass(element, 'new-class');
+     	}
+     }
+     ```
+
+2. **Component Development**
 
    - Follow MVP pattern strictly
    - Keep DOM manipulation in View layer only
-   - Pass DOM elements through constructors rather than querying them directly
+   - Pass DOM elements through constructors
    - Use TypeScript interfaces for better type safety
    - Implement event-driven communication
-   - Keep computed properties in getters rather than storing values
    - Use protected/private fields for better encapsulation
 
-2. **Code Style**
+3. **State Management**
 
+   - Use AppState for global state
+   - Implement state changes through events
+   - Validate state updates
+   - Keep computed properties in getters
+
+4. **Testing**
+
+   - Write unit tests for business logic
+   - Test component integration
+   - Validate event handling
+   - Mock DOM elements and services
+
+5. **Code Style**
    - Use consistent naming conventions
    - Document public methods and interfaces
    - Follow SOLID principles
    - Avoid storing computed values
    - Maintain clean code without debug logs in production
-
-3. **Testing**
-   - Write unit tests for business logic
-   - Test component integration
-   - Validate event handling
+   - Use TypeScript strict mode
 
 ## User Interaction Examples
 
