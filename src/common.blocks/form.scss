@@ -1,47 +1,37 @@
-@use 'variables' as *;
-@use 'mixins';
+@use "variables" as *;
+@use "mixins";
 
 .form {
-	@include mixins.flex(column);
-	gap: 1.5rem;
-	border-radius: 3rem;
+  @include mixins.flex(column);
+  gap: 1.5rem;
+  border-radius: 3rem;
 
-	&__label {
-		flex-grow: 1;
-	}
+  &__label {
+    flex-grow: 1;
+  }
 
-	&__input {
-		background: transparent;
-		color: white;
-		border: $defaultBorder;
-		border-radius: 1.5rem;
-		padding: 1rem;
-		font-size: 1.4rem;
-		width: 100%;
-		box-sizing: border-box;
-		outline-color: $secondary;
+  &__input {
+    background: transparent;
+    color: white;
+    border: $defaultBorder;
+    border-radius: 1.5rem;
+    padding: 1rem;
+    font-size: 1.4rem;
+    width: 100%;
+    box-sizing: border-box;
+    outline-color: $secondary;
 
-		&:focus {
-			outline-style: solid;
-		}
+    &:focus {
+      outline-style: solid;
+    }
 
-		&:invalid {
-			border-color: $error;
-			outline-color: $error;
-		}
+    &:invalid {
+      border-color: $error;
+      outline-color: $error;
+    }
 
-		&::placeholder {
-			color: lighten($primaryLight, 23%);
-		}
-	}
-}
-.input {
-	&_invalid {
-		border-color: #f44336;
-
-		&:focus {
-			border-color: #f44336;
-			box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.2);
-		}
-	}
+    &::placeholder {
+      color: lighten($primaryLight, 23%);
+    }
+  }
 }

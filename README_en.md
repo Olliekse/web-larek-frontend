@@ -1,786 +1,784 @@
 # Web Larek Frontend
 
-## Table of Contents
+A TypeScript-based web application for a developer merchandise store where users can browse and purchase items using a virtual currency called "synapse". This project demonstrates modern frontend development practices using TypeScript, Event-Driven Architecture, and component-based design.
 
-1. [Project Description](#project-description)
-2. [MVP Pattern Implementation](#mvp-pattern-implementation)
-   - [Overview](#overview)
-   - [Communication Flow](#communication-flow)
-   - [Benefits](#benefits)
-   - [UML Class Diagram](#uml-class-diagram)
-3. [Key Features](#key-features)
-4. [Technical Stack](#technical-stack)
-5. [Getting Started](#getting-started)
-   - [Installation](#installation)
-   - [Development Setup](#development-setup)
-6. [Project Structure](#project-structure)
-7. [Class Documentation](#class-documentation)
-   - [Base Classes](#base-classes)
-   - [Models](#models)
-   - [Views](#views)
-   - [Presenters](#presenters)
-8. [Event System](#event-system)
-   - [🛒 Cart Events](#-cart-events)
-   - [🔲 Modal Events](#-modal-events)
-   - [🏷️ Product Events](#️-product-events)
-   - [📝 Form Events](#-form-events)
-9. [API Layer](#api-layer)
-10. [Development Guidelines](#development-guidelines)
-    - [Component Development](#component-development)
-    - [Code Style](#code-style)
-    - [Testing](#testing)
-11. [User Interaction Examples](#user-interaction-examples)
-    - [Adding Product to Cart](#1-adding-product-to-cart)
-    - [Form Validation During Checkout](#2-form-validation-during-checkout)
-    - [Opening Product Details Modal](#3-opening-product-details-modal)
+🔗 **Live Demo**: [Web Larek Frontend](https://olliekse.github.io/web-larek-frontend/)
 
----
+![Web Larek Store Screenshot](screenshot.png)
+_Screenshot of the Web Larek store showing various developer merchandise items with their prices in synapses_
 
-## Project Description
+## Features
 
-A merchandise store for developers where users can spend "synapses" (virtual currency) on developer-themed items. Built using TypeScript and MVP architecture, featuring a responsive gallery, shopping cart functionality, and form validation.
+- 🎨 Interactive product catalog with categories
+- 🛒 Real-time shopping cart with localStorage persistence
+- 💳 Multi-step checkout process
+- 📱 Responsive design
+- 🔍 Modal product previews
+- ✨ Clean and modern UI
 
-🔗 **Live version**: https://olliekse.github.io/web-larek-frontend/
+## Tech Stack
 
----
-
-## MVP Pattern Implementation
-
-This project implements the Model-View-Presenter (MVP) architectural pattern to separate concerns and improve maintainability:
-
-### Overview
-
-The application is divided into three main layers:
-
-1. **Model Layer**: Handles business logic and data management
-
-   - Manages application state
-   - Handles data validation
-   - Emits state change events
-
-2. **View Layer**: Handles UI rendering and user interactions
-
-   - Renders UI components
-   - Captures user input
-   - Emits user interaction events
-
-3. **Presenter Layer**: Coordinates between Models and Views
-   - Handles business logic
-   - Updates Models based on View events
-   - Updates Views based on Model changes
-
-### Communication Flow
-
-1. **User → View**: User interacts with UI elements
-2. **View → Presenter**: View emits events that Presenter handles
-3. **Presenter → Model**: Presenter calls Model methods to update data
-4. **Model → Presenter**: Model emits events with updated state
-5. **Presenter → View**: Presenter updates View with new data
-
-### Benefits
-
-1. **Separation of Concerns**
-
-   - Clear boundaries between layers
-   - Each layer has a single responsibility
-   - DOM manipulation is centralized in Views
-   - Presenters focus purely on business logic
-   - Views receive DOM elements through constructors
-
-2. **Testability**
-
-   - Components can be tested in isolation
-   - Easy to mock dependencies
-
-3. **Maintainability**
-
-   - Changes in one layer don't affect others
-   - Clear responsibility boundaries
-
-4. **Reusability**
-   - Components can be reused across features
-   - Flexible architecture for future changes
-
-For detailed implementation of each component, see [Class Documentation](#class-documentation).
-For event system details, see [Core Concepts - Event System](#event-system).
-
-### UML Class Diagram
-
-The following diagram illustrates the relationships between the main classes in the application:
-
-![UML Class Diagram](./UML.png)
-
-This diagram shows:
-
-- Class hierarchies and inheritance relationships
-- Component interactions and dependencies
-- Event flow between components
-- MVP pattern implementation structure
-
----
-
-## Key Features
-
-- 🎨 Responsive product gallery with dynamic updates
-- 🛒 Real-time cart management with synapse currency
-- 📝 Multi-step order form with validation
-- 🔄 State management with event-driven updates
-- 💳 Multiple payment methods (card/cash)
-- 📱 Mobile-friendly design
-- 🔌 Type-safe API communication with error handling
-
----
-
-## Technical Stack
-
-- **TypeScript** - Main programming language
-- **SCSS** - Styling with BEM methodology
-- **Webpack** - Module bundling and development server
-- **Event-Driven Architecture** - Custom event system for component communication
-- **MVP Pattern** - Model-View-Presenter architectural pattern
-
----
+- **TypeScript** (^5.0.4) - Main programming language
+- **Webpack** (^5.81.0) - Module bundling and development
+- **SCSS** (^1.62.1) - Styling (with BEM methodology)
+- **Event-Driven Architecture** - For component communication
+- **LocalStorage** - For cart persistence
 
 ## Getting Started
 
+### Prerequisites
+
+- Node.js (v16 or higher)
+- npm or yarn
+
 ### Installation
 
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run start
-
-# Build for production
-npm run build
-```
-
-### Development Setup
+1. Clone the repository:
 
 ```bash
-# Clone repository
 git clone https://github.com/olliekse/web-larek-frontend.git
+cd web-larek-frontend
+```
 
-# Install dependencies
+2. Install dependencies:
+
+```bash
 npm install
+# or
+yarn install
+```
 
-# Start development server
-npm run start
+3. Start the development server:
 
-# Build for production
+```bash
+npm start
+# or
+yarn start
+```
+
+4. Build for production:
+
+```bash
 npm run build
-
-# Run tests
-npm run test
-
-# Lint code
-npm run lint
+# or
+yarn build
 ```
 
----
+### Available Scripts
 
-## Project Structure
+- `npm start` - Starts development server
+- `npm run build` - Builds for production
+- `npm run lint` - Runs ESLint
+- `npm run format` - Formats code with Prettier
+- `npm run deploy` - Deploys to GitHub Pages
+
+## Project Architecture
+
+The project follows a component-based architecture with event-driven communication between components. Here's an overview of the main architectural elements:
+
+This architecture is based on two key principles:
+
+- **Component Isolation**: Each UI element (cards, forms, modals) is an independent module with its own logic and responsibility
+- **Event-Driven Communication**: Components communicate through a centralized event system rather than direct references
+
+For example, in a typical interaction:
+
+1. The Card component emits an "add-to-basket" event when a product is selected
+2. The AppData component handles the state change and emits a "basket:changed" event
+3. The Basket component, subscribed to "basket:changed", updates its display accordingly
+
+This pattern provides several benefits:
+
+- Loose coupling between components
+- Improved maintainability as components can be modified independently
+- Clear data flow through the application
+- Easier testing as component interactions are well-defined
+
+### Class Diagram
+
+![Web Larek Class Diagram](UML.png)
+_UML Class diagram showing the relationships and structure of the main components_
+
+The diagram shows:
+
+- **Component Hierarchy**: All UI components inherit from the base Component class
+- **State Management**: AppData manages the application data and state changes
+- **API Integration**: LarekAPI handles all backend communication
+- **Event System**: EventEmitter enables communication between components
+- **UI Components**: Card, Modal, Basket, and Form handle user interactions
+
+### Component System
+
+#### Base Components
+
+##### EventEmitter
+
+Core event handling system that enables component communication between all parts of the application.
+
+```typescript
+class EventEmitter {
+	// Map of event names to callback functions
+	private events: Map<string, Set<Callback>>;
+
+	// Registers a callback for a specific event
+	on(event: string, callback: Function): void;
+
+	// Removes a registered callback
+	off(event: string, callback: Function): void;
+
+	// Triggers an event with optional data
+	emit(event: string, data?: any): void;
+}
+```
+
+##### Component
+
+Abstract base class for all UI components in the application. Provides common functionality for rendering and event handling.
+
+```typescript
+abstract class Component<T> {
+	// Root DOM element
+	protected container: HTMLElement;
+
+	// Event system reference
+	protected events: IEvents;
+
+	// Updates text content safely
+	protected setText(element: HTMLElement, value: unknown): void;
+
+	// Sets image source with error handling
+	protected setImage(
+		element: HTMLImageElement,
+		src: string,
+		alt?: string
+	): void;
+
+	// Manages disabled state
+	protected setDisabled(element: HTMLElement, state: boolean): void;
+
+	// Emits events through the event system
+	protected emit(event: string, payload?: object): void;
+
+	// Renders component content
+	abstract render(data?: T): HTMLElement;
+}
+```
+
+##### Model
+
+Base class for all data models in the application. Implements state management with type-safe updates.
+
+```typescript
+abstract class Model<T> {
+	// Event system for broadcasting state changes
+	protected events: IEvents;
+
+	// Type-safe state container
+	private state: T;
+
+	// Creates a new model with initial state and event system
+	constructor(data: Partial<T>, events: IEvents);
+
+	// Retrieves the current state
+	public getState(): T;
+
+	// Updates the state with new data
+	protected updateState(newState: T): void;
+
+	// Notifies subscribers about state changes
+	protected emitChanges(event: string): void;
+}
+```
+
+#### Core Components
+
+##### AppData
+
+Central state management component that handles all application data. Manages product catalog, shopping basket, preview state, and order processing.
+
+```typescript
+class AppData extends Model<IAppState> {
+	// Updates the product catalog and notifies subscribers
+	setCatalog(items: IProduct[]): void;
+
+	// Adds a product to the shopping basket
+	addToBasket(item: IProduct): void;
+
+	// Removes a product from the basket by ID
+	removeFromBasket(id: string): void;
+
+	// Clears all items from the basket
+	clearBasket(): void;
+
+	// Sets the product being previewed
+	setPreview(item: IProduct | null): void;
+
+	// Updates a specific field in the order form
+	setOrderField(field: keyof IAppState['order'], value: string | number): void;
+
+	// Validates the current order data
+	validateOrder(): Partial<Record<keyof IAppState['order'], string>>;
+}
+```
+
+##### Card
+
+Component for displaying product information in various contexts. Handles different display modes: catalog view, preview, and basket item.
+
+```typescript
+class Card extends Component<ICard> {
+	// Element displaying product title
+	protected _title: HTMLElement;
+
+	// Optional product image element
+	protected _image?: HTMLImageElement;
+
+	// Element showing product category
+	protected _category?: HTMLElement;
+
+	// Element displaying product price
+	protected _price: HTMLElement;
+
+	// Interactive button for card actions
+	protected _button?: HTMLButtonElement;
+
+	// Updates card's unique identifier
+	set id(value: string);
+
+	// Sets the product title
+	set title(value: string);
+
+	// Updates product image source
+	set image(value: string);
+
+	// Controls card's selected state
+	set selected(value: boolean);
+
+	// Manages card's disabled state
+	set disabled(value: boolean);
+
+	// Formats and displays product price
+	protected setPrice(value: number | null): void;
+
+	// Sets category and applies appropriate styling
+	protected setCategory(value: string): void;
+
+	// Renders card with provided product data
+	render(data: ICard): HTMLElement;
+}
+```
+
+##### PreviewCard
+
+Extended version of Card component for detailed product views. Adds description display capability while maintaining all base card functionality.
+
+```typescript
+class PreviewCard extends Card {
+	// Element for displaying detailed product description
+	protected _description: HTMLElement;
+
+	// Creates a preview card with description support
+	constructor(container: HTMLElement, actions?: ICardActions);
+
+	// Sets the product description text
+	set description(value: string);
+
+	// Updates description visibility
+	protected setDescriptionVisible(visible: boolean): void;
+
+	// Renders preview card with full product details
+	render(data: ICard & { description?: string }): HTMLElement;
+}
+```
+
+##### Modal
+
+Modal window component for displaying overlay content. Handles opening, closing, and content management with proper scroll locking.
+
+```typescript
+class Modal extends Component<IModalData> {
+	// Button for closing the modal
+	protected _closeButton: HTMLButtonElement;
+
+	// Container for modal's content
+	protected _content: HTMLElement;
+
+	// Outer container for modal positioning
+	protected _container: HTMLElement;
+
+	// Creates modal with close button and event handlers
+	constructor(container: HTMLElement, events: IEvents);
+
+	// Updates modal's content element
+	set content(value: HTMLElement);
+
+	// Opens modal and locks page scroll
+	open(): void;
+
+	// Closes modal and restores page scroll
+	close(): void;
+
+	// Renders modal with provided content
+	render(data: IModalData): HTMLElement;
+}
+```
+
+##### Form
+
+Form component that handles user input validation and submission. Supports both order and contact information forms with real-time validation.
+
+```typescript
+class Form extends Component<IFormState> {
+	// Submit button that triggers form submission
+	protected _submit: HTMLButtonElement;
+
+	// Container for validation error messages
+	protected _errors: HTMLElement;
+
+	// Collection of payment method selection buttons
+	protected _paymentButtons: NodeListOf<HTMLButtonElement>;
+
+	// Input fields for user data
+	protected _address: HTMLInputElement;
+	protected _email: HTMLInputElement;
+	protected _phone: HTMLInputElement;
+
+	// Set of current validation errors
+	protected _validationErrors: Set<string>;
+
+	// Main form element reference
+	protected _form: HTMLFormElement;
+
+	// Creates form instance and sets up validation handlers
+	constructor(container: HTMLElement, events: IEvents);
+
+	// Validates all form fields and updates state
+	protected validateForm(): void;
+
+	// Handles input field changes with validation
+	protected handleInput(event: Event): void;
+
+	// Processes form submission with validation
+	protected handleSubmit(event: Event): void;
+
+	// Updates submit button state based on validity
+	set valid(value: boolean);
+
+	// Updates error message display
+	set errors(value: string[]);
+
+	// Renders form with current state
+	render(state: IFormState): HTMLElement;
+}
+```
+
+##### Success
+
+Component for displaying successful order completion. Shows order summary and confirmation details.
+
+```typescript
+class Success extends Component<ISuccessProps> {
+	// Element displaying total amount
+	protected _total: HTMLElement;
+
+	// Element showing order identifier
+	protected _id: HTMLElement;
+
+	// Creates success message component
+	constructor(container: HTMLElement);
+
+	// Sets the total amount with proper formatting
+	protected setTotal(value: number): void;
+
+	// Sets the order identifier
+	protected setId(value: string): void;
+
+	// Renders success message with order details
+	render(data: ISuccessProps): HTMLElement;
+}
+```
+
+##### Basket
+
+Shopping cart component that manages the display of selected items and total amount.
+
+```typescript
+class Basket extends Component<IBasketView> {
+	// Counter showing number of items
+	protected _counter: HTMLElement;
+
+	// Element displaying total amount
+	protected _total: HTMLElement;
+
+	// Container for basket items
+	protected _items: HTMLElement;
+
+	// Creates basket component with event handlers
+	constructor(container: HTMLElement, events: IEvents);
+
+	// Updates item counter display
+	protected setCount(value: number): void;
+
+	// Updates total amount display
+	protected setTotal(value: number): void;
+
+	// Renders basket with current items and total
+	render(data: IBasketView): HTMLElement;
+}
+```
+
+##### Page
+
+Main page component that orchestrates the layout and manages global UI elements.
+
+```typescript
+class Page extends Component<IPageState> {
+	// Container for product catalog
+	protected _catalog: HTMLElement;
+
+	// Shopping cart instance
+	protected _basket: Basket;
+
+	// Modal window instance
+	protected _modal: Modal;
+
+	// Creates page component and initializes subcomponents
+	constructor(container: HTMLElement, events: IEvents);
+
+	// Updates catalog display with product cards
+	set catalog(items: HTMLElement[]);
+
+	// Shows/hides loading indicator
+	protected toggleLoader(show: boolean): void;
+
+	// Renders page with initial state
+	render(data: IPageState): HTMLElement;
+}
+```
+
+## Technical Reference
+
+### Component Interactions
+
+Below is a visualization of how components interact in different scenarios:
+
+```mermaid
+graph TD
+    A[User Action] --> B[EventEmitter]
+    B --> C{Event Type}
+    C -->|State Event| D[AppState]
+    C -->|UI Event| E[Component]
+    D --> F[Update State]
+    F --> G[Emit Change Event]
+    G --> E
+    E --> H[Update UI]
+```
+
+#### Example: Adding to Cart Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Card
+    participant AppState
+    participant LocalStorage
+    participant UI
+
+    User->>Card: Click Add to Cart
+    Card->>AppState: addToBasket(item)
+    AppState->>AppState: Update basket state
+    AppState->>LocalStorage: Save basket
+    AppState->>UI: Emit basket:changed
+    UI->>UI: Update counter
+```
+
+### Implementation Examples
+
+#### 1. Browsing and Previewing Products
+
+```typescript
+// Step 1: Initialize catalog display
+events.on('items:changed', () => {
+	const state = appData.getState();
+	page.catalog = state.catalog.map((item) => createProductCard(item));
+});
+
+// Step 2: Create product card with click handler
+function createProductCard(item: IProduct) {
+	return new Card(cardTemplate, {
+		onClick: () => {
+			appData.setPreview(item);
+			modal.open();
+		},
+	}).render(item);
+}
+
+// Step 3: Handle preview state changes
+events.on('preview:changed', () => {
+	const state = appData.getState();
+	if (state.preview) {
+		showProductPreview(state.preview);
+	}
+});
+
+// Step 4: Display product preview
+function showProductPreview(item: IProduct) {
+	const previewCard = new PreviewCard(previewTemplate, {
+		onClick: () => appData.addToBasket(item),
+	});
+	modal.render({ content: previewCard.render(item) });
+}
+
+// Step 5: Handle preview closing
+modal.on('close', () => {
+	appData.setPreview(null);
+});
+```
+
+#### 2. Form Handling and Validation
+
+```typescript
+// Step 1: Initialize form with validation
+class OrderForm extends Form {
+	constructor(container: HTMLElement, events: IEvents) {
+		super(container, events);
+		this.setupValidation();
+	}
+
+	// Step 2: Set up field validation rules
+	private setupValidation() {
+		const rules = {
+			email: (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
+			phone: (value: string) => /^\+?[\d\s-]{10,}$/.test(value),
+			address: (value: string) => value.length >= 10,
+		};
+		this.setValidationRules(rules);
+	}
+
+	// Step 3: Validate individual fields
+	protected validateField(field: HTMLInputElement): boolean {
+		const value = field.value.trim();
+		if (!value && field.required) return false;
+		return this.rules[field.name]?.(value) ?? true;
+	}
+
+	// Step 4: Handle form submission
+	protected handleSubmit(event: Event) {
+		event.preventDefault();
+		if (this.validateForm()) {
+			this.emit('submit', this.getFormData());
+		}
+	}
+
+	// Step 5: Display validation results
+	protected showValidationResults() {
+		const errors = Array.from(this._validationErrors);
+		this.errors = errors;
+		this.valid = errors.length === 0;
+	}
+}
+```
+
+#### 3. Shopping Cart Management
+
+```typescript
+// Step 1: Add item to basket
+function addToBasket(item: IProduct) {
+	appData.addToBasket(item);
+	localStorage.setItem('basket', JSON.stringify(appData.getState().basket));
+}
+
+// Step 2: Update basket display
+events.on('basket:changed', () => {
+	const state = appData.getState();
+	updateBasketUI(state.basket);
+	updateTotalPrice(state.basket);
+});
+
+// Step 3: Calculate total price
+function updateTotalPrice(items: IProduct[]) {
+	const total = items.reduce((sum, item) => sum + item.price, 0);
+	appData.setOrderField('total', total);
+}
+
+// Step 4: Remove item from basket
+function removeFromBasket(id: string) {
+	appData.removeFromBasket(id);
+	localStorage.setItem('basket', JSON.stringify(appData.getState().basket));
+}
+
+// Step 5: Handle checkout process
+function initiateCheckout() {
+	if (appData.getState().basket.length > 0) {
+		modal.render({ content: new OrderForm(formTemplate, events) });
+		modal.open();
+	}
+}
+```
+
+#### 4. Order Processing
+
+```typescript
+// Step 1: Collect order data
+function prepareOrderData(): IOrder {
+	const state = appData.getState();
+	return {
+		items: state.basket.map((item) => item.id),
+		total: calculateTotal(state.basket),
+		...state.order,
+	};
+}
+
+// Step 2: Validate order data
+function validateOrder(order: IOrder): string[] {
+	const errors = appData.validateOrder();
+	return Object.values(errors);
+}
+
+// Step 3: Submit order to backend
+async function submitOrder(order: IOrder) {
+	try {
+		const response = await api.createOrder(order);
+		handleOrderSuccess(response);
+	} catch (error) {
+		handleOrderError(error);
+	}
+}
+
+// Step 4: Handle successful order
+function handleOrderSuccess(response: IOrderResult) {
+	appData.clearBasket();
+	localStorage.removeItem('basket');
+	showSuccessMessage(response);
+}
+
+// Step 5: Clean up after order
+function showSuccessMessage(response: IOrderResult) {
+	const success = new Success(successTemplate);
+	modal.render({
+		content: success.render({ total: response.total }),
+	});
+}
+```
+
+### Event System and API Reference
+
+The application uses events for component communication. Here's the complete reference:
+
+#### State Events
+
+| Event Name      | Payload                                | Description                 |
+| --------------- | -------------------------------------- | --------------------------- |
+| items:changed   | `IProduct[]`                           | Product catalog updated     |
+| preview:changed | `IProduct \| null`                     | Product preview set/cleared |
+| basket:changed  | `{ items: IProduct[], total: number }` | Shopping cart modified      |
+| order:changed   | `IOrder`                               | Order details updated       |
+
+#### User Action Events
+
+| Event Name      | Payload                                | Description               |
+| --------------- | -------------------------------------- | ------------------------- |
+| input           | `{ field: string, value: string }`     | Form field changed        |
+| submit          | `{ payment: string, address: string }` | Order form submitted      |
+| contacts:submit | `{ email: string, phone: string }`     | Contact details submitted |
+
+### API Integration
+
+#### Api
+
+Base class for API communication. Provides methods for making HTTP requests and handling responses.
+
+```typescript
+class Api {
+	// Base URL for API endpoints
+	readonly baseUrl: string;
+
+	// Default request options
+	protected options: RequestInit;
+
+	// Creates API instance with base URL and default options
+	constructor(baseUrl: string, options: RequestInit = {});
+
+	// Makes a GET request to the specified endpoint
+	protected get(uri: string): Promise<unknown>;
+
+	// Makes a POST request with data to the specified endpoint
+	protected post(uri: string, data: object): Promise<unknown>;
+
+	// Handles API response and error checking
+	protected handleResponse(response: Response): Promise<unknown>;
+}
+```
+
+#### LarekAPI
+
+API client that handles all backend communication. Manages product fetching and order submission.
+
+```typescript
+class LarekAPI extends Api {
+	// Base URL for product images
+	readonly cdn: string;
+
+	// Creates API client with CDN and API endpoints
+	constructor(cdn: string, baseUrl: string, options?: RequestInit);
+
+	// Fetches and processes product list
+	getProductList(): Promise<IProduct[]>;
+
+	// Submits order to backend
+	createOrder(order: IOrder): Promise<IOrderResult>;
+
+	// Adds CDN URL to product images
+	private addCdnUrl(items: IProduct[]): IProduct[];
+}
+```
+
+### Project Structure
 
 ```
-web-larek-frontend/
-├── src/
-│   ├── components/        # Application components (views, models, presenters)
-│   ├── services/         # Service layer implementations
-│   │   ├── api/         # API service implementations
-│   │   └── DOMService.ts # DOM manipulation service
-│   ├── utils/            # Utility functions and helpers
-│   ├── common.blocks/    # Common block components
-│   ├── config/           # Configuration files
-│   ├── constants/        # Constants and enums
-│   ├── images/           # Image assets
-│   ├── pages/            # Page templates
-│   ├── public/           # Public assets
-│   ├── scss/            # SCSS styles
-│   ├── types/           # TypeScript type definitions
-│   ├── vendor/          # Third-party libraries
-│   └── index.ts         # Application entry point
+src/
+├── components/          # Core components
+│   ├── base/           # Base classes
+│   │   ├── Component.ts    # Base UI component
+│   │   ├── events.ts      # Event system
+│   │   └── Model.ts       # State management
+│   ├── common/         # Shared components
+│   ├── AppData.ts      # Application state
+│   ├── Card.ts         # Product card component
+│   ├── LarekAPI.ts     # API client
+│   ├── Order.ts        # Order management
+│   └── Page.ts         # Page layout
+├── types/              # TypeScript definitions
+│   ├── index.ts        # Type exports
+│   ├── api.ts          # API types
+│   └── common.ts       # Shared types
+├── utils/              # Utility functions
+│   ├── constants.ts    # Global constants
+│   └── utils.ts        # Helper functions
+└── index.ts           # Application entry point
 ```
-
-## Class Documentation
-
-### Base Classes
-
-1. **BasePresenter**
-
-   - **Purpose**: Serves as the foundation for all presenters in the MVP pattern, providing common event handling and lifecycle management functionality. Acts as a bridge between Models and Views.
-   - **Fields**:
-     - `protected events: IEvents` - Event system instance
-   - **Methods**:
-     - `constructor(events: IEvents)` - Initialises presenter with event system
-     - `protected init(): void` - Template method for initialisation
-     - `protected destroy(): void` - Cleanup and event unsubscription
-
-2. **Card**
-
-   - **Purpose**: Provides a reusable foundation for all product card components, handling common DOM manipulation, template management, and category styling. Ensures consistent card rendering across the application.
-   - **Fields**:
-     - `protected elements: CardElements` - DOM element references
-     - `protected template: HTMLTemplateElement` - Card template
-     - `protected domService: IDOMService` - DOM manipulation service
-   - **Methods**:
-     - `protected initializeElements(): void` - Sets up DOM element references
-     - `render(data: IProduct): HTMLElement` - Creates card element
-     - `protected getCategoryClass(category: string): string` - Maps category to CSS class
-
-3. **EventEmitter**
-   - **Purpose**: Implements a robust event system that enables decoupled communication between components. Manages event subscription, unsubscription, and emission throughout the application lifecycle.
-   - **Fields**:
-     - `private events: Record<string, EventHandler[]>` - Event handler storage
-   - **Methods**:
-     - `on(event: string, handler: EventHandler): void` - Subscribes to event
-     - `off(event: string, handler: EventHandler): void` - Unsubscribes from event
-     - `emit(event: string, data?: unknown): void` - Triggers event handlers
-     - `trigger(event: string): Function` - Creates event trigger function
-
-### Models
-
-1. **AppState**
-
-   - **Purpose**: Acts as a central state management system for the entire application, maintaining product data, cart state, loading states, and modal visibility. Ensures consistent state updates and notifications across components.
-   - **Fields**:
-     - `private state` - Contains:
-       - `cart: { items: IProduct[] }` - Cart items with localStorage persistence
-       - `modal: IModal` - Modal window state
-       - `products: IProduct[]` - Product list storage
-       - `loading: LoadingState` - Loading states for different operations
-       - `error: string | null` - Global error state
-   - **Methods**:
-     - `setProducts(products: IProduct[]): void` - Updates product list
-     - `getProducts(): IProduct[]` - Retrieves product list
-     - `addToCart(product: IProduct): void` - Adds product to cart with persistence
-     - `removeFromCart(productId: string): void` - Removes cart item
-     - `getCart(): CartState` - Gets current cart state with computed total
-     - `clearCart(): void` - Clears cart and persists to localStorage
-     - `isProductInCart(productId: string): boolean` - Checks if product is in cart
-     - `setLoading(type: keyof LoadingState, value: boolean): void` - Updates loading state
-     - `isLoading(type: keyof LoadingState): boolean` - Checks specific loading state
-     - `isAnyLoading(): boolean` - Checks if any operation is loading
-     - `setError(message: string | null): void` - Sets error state
-     - `private calculateCartTotal(): number` - Computes current cart total
-
-2. **FormModel**
-
-   - **Purpose**: Manages form data validation and state. Handles basic validation to ensure required fields are filled before submission.
-   - **Fields**:
-     - `protected payment: string` - Payment method
-     - `protected email: string` - User email
-     - `protected phone: string` - User phone number
-     - `protected address: string` - Delivery address
-     - `protected formErrors: FormErrors` - Validation error storage
-   - **Methods**:
-     - `setOrderData(field: string, value: string): void` - Updates form data
-     - `validateContacts(): boolean` - Validates that contact fields are not empty
-     - `validateOrder(): boolean` - Validates that order fields are not empty
-     - `getOrderLot(orderData: IOrderData): IOrder` - Prepares order data for submission
-     - `resetForm(): void` - Resets all form fields and errors
-     - Protected setters:
-       - `protected setEmail(value: string): void` - Validates and sets email
-       - `protected setPhone(value: string): void` - Validates and sets phone
-       - `protected setAddress(value: string): void` - Validates and sets address
-
-3. **OrderModel**
-   - **Purpose**: Manages the complete order lifecycle, from item collection to payment method selection and contact information. Ensures order data integrity and validation before submission.
-   - **Fields**:
-     - `private orderData: IOrder` - Current order data
-     - `private items: string[]` - Order item IDs
-     - `private paymentMethod: PaymentMethod` - Selected payment method
-   - **Methods**:
-     - `setOrderItems(items: IProduct[]): void` - Updates order items
-     - `setPaymentMethod(method: PaymentMethod): void` - Sets payment method
-     - `setContactInfo(info: ContactInfo): void` - Updates contact details
-     - `getOrderData(): IOrder` - Gets complete order data
-     - `validateOrder(): boolean` - Validates order completeness
-
-### Views
-
-1. **CardPreview**
-
-   - **Purpose**: Provides an interactive product display component that handles both gallery and modal views, managing product information presentation and user interactions with cart functionality.
-   - **Constructor**:
-     ```typescript
-     constructor(
-         template: HTMLTemplateElement,
-         protected events: IEvents,
-         protected domService: IDOMService,
-         protected stateService: StateService,
-         protected actions?: IActions
-     )
-     ```
-   - **Fields**:
-     - `protected elements: { card: HTMLElement }` - Base card element
-     - `protected button: HTMLButtonElement` - Cart action button
-     - `private currentProduct: IProduct` - Currently displayed product
-   - **Methods**:
-     - `protected initializeElements(): void` - Sets up card elements
-     - `render(data: IProduct): HTMLElement` - Creates product card
-     - `updateButtonState(isInCart: boolean, canBePurchased: boolean): void` - Updates button
-     - `renderModal(data: IProduct): HTMLElement` - Creates modal view
-
-2. **Cart**
-
-   - **Purpose**: Delivers a comprehensive shopping cart interface that manages item display, total calculation, and checkout process initiation. Provides real-time updates of cart state.
-   - **Fields**:
-     - `protected _list: HTMLElement` - Container for cart items
-     - `protected _total: HTMLElement` - Display for total price
-     - `protected _button: HTMLButtonElement` - Checkout action button
-     - `private _counter: HTMLElement` - Cart item counter in header
-   - **Methods**:
-     - `render(): HTMLElement` - Renders cart container
-     - `renderItems(items: IProduct[]): void` - Updates cart items display
-     - `renderSumAllProducts(total: number): void` - Updates total price
-     - `renderHeaderCartCounter(count: number): void` - Updates cart counter
-     - `updateTotal(total: number): void` - Updates total display with computed value
-     - `clear(): void` - Clears cart contents
-
-3. **OrderForm**
-
-   - **Purpose**: Facilitates the order completion process with address input, payment method selection, and form validation. Guides users through the checkout flow with appropriate feedback.
-   - **Fields**:
-     - `private _addressInput: HTMLInputElement` - Delivery address input
-     - `private _paymentButtons: HTMLButtonElement[]` - Payment method selection
-     - `private _submitButton: HTMLButtonElement` - Order submission button
-     - `private _errorDisplay: HTMLElement` - Validation error messages
-   - **Methods**:
-     - `validateAddress(): boolean` - Checks address validity
-     - `setPaymentMethod(method: string): void` - Updates payment selection
-     - `private handleSubmit(): void` - Processes form submission
-     - `showSuccess(): void` - Displays success message
-
-4. **ModalView**
-
-   - **Purpose**: Implements a flexible modal window system that can display various types of content with consistent styling and behavior.
-   - **Interface**: `IModalView`
-     - `open(): void` - Opens the modal window
-     - `close(): void` - Closes the modal window
-     - `setContent(content: HTMLElement): void` - Updates modal content
-     - `setTitle(title: string): void` - Updates modal title
-   - **Fields**:
-     - `protected _content: HTMLElement` - Content container
-     - `protected _title: HTMLElement` - Title element
-     - `protected closeButton: HTMLButtonElement` - Close button
-     - `protected pageWrapper: HTMLElement` - Page wrapper for modal overlay
-   - **Methods**:
-     - `constructor(container: HTMLElement, events: IEvents)` - Initializes modal with error checking
-     - `open(): void` - Opens modal with animation
-     - `close(): void` - Closes modal with cleanup
-     - `setContent(content: HTMLElement): void` - Updates content safely
-     - `setTitle(title: string): void` - Updates title safely
-   - **Error Handling**:
-     - Validates required elements existence on initialization
-     - Throws descriptive errors for missing elements
-     - Prevents event bubbling for modal container clicks
-
-5. **ContactsView**
-   - **Purpose**: Pure view component for contact form display. Handles only UI rendering and user input capture, delegating all data processing to the model.
-   - **Fields**:
-     - `private _form: HTMLFormElement` - Form element
-     - `private _button: HTMLButtonElement` - Submit button
-     - `private _errors: HTMLElement` - Error display
-     - `private _inputs: HTMLInputElement[]` - Form inputs
-   - **Methods**:
-     - `render(): HTMLElement` - Renders the contact form
-     - `resetForm(): void` - Resets form state
-     - `set valid(value: boolean)` - Updates form validation state
-     - `set error(value: string)` - Displays validation errors
-
-### Presenters
-
-1. **ProductPresenter**
-
-   - **Purpose**: Orchestrates product catalog functionality, managing product display, state updates, and user interactions. Coordinates between product data and visual representation.
-   - **Fields**:
-     - `private gallery: HTMLElement` - Product gallery container
-     - `private appState: AppState` - Application state management
-     - `private api: ProductApi` - Product API service
-   - **Methods**:
-     - `async init(): Promise<void>`
-       - Initialises product display
-       - Fetches products from API
-       - Emits: `state:products:changed`
-     - `private handleProductSelect(product: IProduct): void`
-       - Opens product detail modal
-       - Parameters:
-         - `product`: Selected product
-       - Emits: `modal:open`
-     - `private updateProductStates(): void`
-       - Updates product button states
-       - Synchronises with cart state
-       - Updates UI elements
-
-2. **CartPresenter**
-
-   - **Purpose**: Coordinates all shopping cart operations, managing state updates, item removal, and cart display. Ensures synchronization between cart view and underlying data.
-   - **Fields**:
-     - `private appState: AppState` - Application state management
-     - `private view: ICart` - Cart view interface
-     - `private modal: ModalView` - Modal window service
-   - **Methods**:
-     - `init(): void`
-       - Sets up cart listeners
-       - Initialises cart state
-       - Updates cart counter
-     - `private handleCartOpen(): void`
-       - Opens cart modal
-       - Updates cart display with computed total
-       - Emits: `modal:open`
-     - `private handleItemRemove(productId: string): void`
-       - Removes item from cart
-       - Updates cart state
-       - Emits: `state:cart:changed`
-
-3. **OrderPresenter**
-
-   - **Purpose**: Manages the complete order submission flow, coordinating form validation, data collection, and API communication. Ensures a smooth checkout experience.
-   - **Fields**:
-     - `private formModel: FormModel` - Order form data
-     - `private api: ProductApi` - API service
-     - `private appState: AppState` - Application state management
-   - **Methods**:
-     - `init(): void`
-       - Sets up form listeners
-       - Initialises validation
-       - Prepares order flow
-     - `private handleSubmit(formData: IOrderForm): void`
-       - Processes order submission
-       - Validates form data
-       - Calls API to create order
-       - Emits: `order:success`
-     - `private validateOrder(): boolean`
-       - Checks order validity
-       - Validates all fields
-       - Returns: Validation result
-     - `private handlePaymentSelection(method: PaymentMethod): void`
-       - Updates payment method
-       - Validates form state
-       - Updates UI accordingly
-
-4. **ModalPresenter**
-
-   - **Purpose**: Controls modal window lifecycle and content management, coordinating between different views that require modal display. Manages modal state and transitions.
-   - **Fields**:
-     - `private view: ModalView` - Modal view instance
-     - `private currentContent: HTMLElement | null` - Currently displayed content
-     - `private isOpen: boolean` - Modal state tracker
-   - **Methods**:
-     - `init(): void`
-       - Sets up modal event listeners
-       - Initialises view state
-       - Subscribes to events
-     - `private handleOpen(content: HTMLElement, title?: string): void`
-       - Opens modal with content
-       - Parameters:
-         - `content`: Content to display
-         - `title`: Optional modal title
-       - Emits: `modal:opened`
-     - `private handleClose(): void`
-       - Closes modal window
-       - Cleans up content
-       - Emits: `modal:closed`
-
-5. **ContactsPresenter**
-
-   - **Purpose**: Coordinates contact information collection and validation, managing form state and user input validation. Ensures valid contact data before order processing.
-   - **Fields**:
-     - `private formModel: FormModel` - Form data model
-     - `private view: ContactsView` - Contact form view
-     - `private api: ProductApi` - API service
-   - **Methods**:
-     - `init(): void`
-       - Sets up form validation
-       - Initialises event handlers
-       - Prepares form state
-     - `private handleSubmit(data: ContactInfo): void`
-       - Processes form submission
-       - Parameters:
-         - `data`: Contact form data
-       - Validates input
-       - Emits: `contacts:valid`
-     - `private validateForm(): boolean`
-       - Performs form validation
-       - Checks all required fields
-       - Returns: Overall validity
-
-6. **AppPresenter**
-   - **Purpose**: Serves as the main application coordinator, initializing and managing all other presenters. Handles global state, error management, and high-level application flow.
-   - **Fields**:
-     - `private productPresenter: ProductPresenter` - Product management
-     - `private cartPresenter: CartPresenter` - Cart operations
-     - `private orderPresenter: OrderPresenter` - Order processing
-     - `private modalPresenter: ModalPresenter` - Modal management
-     - `private stateService: StateService` - Global state
-   - **Methods**:
-     - `async init(): Promise<void>`
-       - Initialises all presenters
-       - Sets up global event handlers
-       - Loads initial data
-     - `private setupEventHandlers(): void`
-       - Configures global event system
-       - Sets up inter-presenter communication
-       - Handles global state changes
-     - `private handleError(error: Error): void`
-       - Global error handler
-       - Shows error messages
-       - Logs errors appropriately
-     - `private loadInitialData(): Promise<void>`
-       - Fetches initial application data
-       - Updates global state
-       - Initialises views
-
-## Event System
-
-### 🛒 Cart Events
-
-- `cart:open` - Open cart modal
-- `cart:changed` - Cart contents have changed
-- `cart:removeItem` - Request to remove item from cart
-- `cart:state:get` - Request current cart state
-
-### 🔲 Modal Events
-
-- `modal:open` - Open modal window with content
-- `modal:close` - Close modal window
-- `modal:update` - Update modal content
-
-### 🏷️ Product Events
-
-- `card:select` - Product card selected
-- `card:addCart` - Request to add product to cart
-
-### 📝 Form Events
-
-- `order:ready` - Order form is valid and ready
-- `order:submit` - Order form submitted
-- `order:open` - Open order form
-- `order:paymentSelection` - Payment method selected
-
-## API Layer
-
-The API layer is implemented using a base API client class that handles:
-
-- Type-safe request/response handling
-- Error management
-- Authentication
-- Response transformation
-
-Key features of the API layer:
-
-- Centralised error handling with typed errors
-- Generic request/response typing
-- Clean separation between base functionality and specific implementations
-- Consistent error handling across all API calls
 
 ## Development Guidelines
 
-1. **Component Development**
+1. **Event Handling**
 
-   - Follow MVP pattern strictly
-   - Keep DOM manipulation in View layer only
-   - Pass DOM elements through constructors rather than querying them directly
-   - Use TypeScript interfaces for better type safety
-   - Implement event-driven communication
-   - Keep computed properties in getters rather than storing values
-   - Use protected/private fields for better encapsulation
+   - Use events for component communication
+   - Keep event names consistent
+   - Document event payloads
 
-2. **Code Style**
+2. **State Management**
 
-   - Use consistent naming conventions
-   - Document public methods and interfaces
-   - Follow SOLID principles
-   - Avoid storing computed values
-   - Maintain clean code without debug logs in production
+   - Modify state only through AppData
+   - Use events to react to state changes
+   - Persist necessary data to localStorage
 
-3. **Testing**
-   - Write unit tests for business logic
-   - Test component integration
-   - Validate event handling
+3. **Component Development**
 
-## User Interaction Examples
+   - Keep components focused and single-purpose
+   - Use TypeScript interfaces for props
+   - Follow the established component lifecycle
 
-Here are three common user interactions demonstrating the MVP pattern flow:
-
-### 1. Adding Product to Cart
-
-#### View (User Interaction)
-
-```typescript
-class CardView extends Card {
-	protected initializeElements(): void {
-		this.button.addEventListener('click', (e: Event) => {
-			e.preventDefault();
-			this.events.emit('card:addCart', this.currentProduct);
-		});
-	}
-}
-```
-
-#### Presenter (Business Logic)
-
-```typescript
-class ProductPresenter extends BasePresenter {
-	constructor(private appState: AppState, private view: CardView) {
-		super();
-		this.events.on('card:addCart', this.handleAddToCart.bind(this));
-	}
-
-	private handleAddToCart(product: IProduct): void {
-		this.appState.addToCart(product);
-		this.updateButtonState(product.id, true);
-	}
-}
-```
-
-#### Model (State Update)
-
-```typescript
-class AppState {
-	private cart: CartState = { items: [] };
-
-	public addToCart(product: IProduct): void {
-		this.cart.items.push(product);
-		this.events.emit('state:cart:changed', {
-			items: this.cart.items,
-			total: this.calculateCartTotal(),
-		});
-	}
-}
-```
-
-### 2. Form Validation During Checkout
-
-#### View (User Input)
-
-```typescript
-class ContactsView {
-	constructor() {
-		this._emailInput.addEventListener('input', (e: Event) => {
-			const email = (e.target as HTMLInputElement).value;
-			this.events.emit('form:input', { field: 'email', value: email });
-		});
-	}
-}
-```
-
-#### Presenter (Validation Logic)
-
-```typescript
-class OrderPresenter extends BasePresenter {
-	constructor(private formModel: FormModel, private view: ContactsView) {
-		super();
-		this.events.on('form:input', this.handleInput.bind(this));
-	}
-
-	private handleInput(data: { field: string; value: string }): void {
-		this.formModel.setOrderData(data.field, data.value);
-		const isValid = !this.formModel.validateOrder();
-		this.view.valid = isValid;
-	}
-}
-```
-
-#### Model (Validation Rules)
-
-```typescript
-class FormModel {
-	validateOrder(): boolean {
-		return !this.email || !this.phone || !this.address;
-	}
-
-	setOrderData(field: string, value: string): void {
-		this[field] = value;
-		this.events.emit('formData:changed', {
-			field,
-			value,
-			isValid: !!value,
-		});
-	}
-}
-```
-
-### 3. Opening Product Details Modal
-
-#### View (Gallery Interaction)
-
-```typescript
-class CardView extends Card {
-	constructor(
-		template: HTMLTemplateElement,
-		protected events: IEvents,
-		protected domService: IDOMService,
-		protected container: HTMLElement
-	) {
-		super();
-		this.initializeElements();
-	}
-
-	protected initializeElements(): void {
-		this.container.addEventListener('click', () => {
-			this.events.emit('card:select', this.currentProduct);
-		});
-	}
-}
-```
-
-#### Presenter (Modal Coordination)
-
-```typescript
-class ProductPresenter extends BasePresenter {
-	constructor(
-		private appState: AppState,
-		private view: CardView,
-		private api: ProductApi,
-		events: IEvents,
-		private gallery: HTMLElement
-	) {
-		super(events);
-	}
-
-	private handleProductSelect(product: IProduct): void {
-		const modalContent = this.view.renderModal(product);
-		this.events.emit('modal:open', {
-			content: modalContent,
-			title: product.title,
-		});
-	}
-}
-```
-
-#### Model (State Management)
-
-```typescript
-class AppState {
-	setModalProduct(product: IProduct): void {
-		this.currentModalProduct = product;
-		this.events.emit('state:modal:product', {
-			product,
-			isInCart: this.isProductInCart(product.id),
-		});
-	}
-}
-```
-
-Each example demonstrates:
-
-- Clear separation of concerns (MVP pattern)
-- Event-driven communication
-- Unidirectional data flow
-- State management
-- User feedback
-
----
-
-## Screenshot
-
-![Project Screenshot](./screenshot.png)
-
-The screenshot shows the main interface of the Web Larek store, featuring:
-
-- Responsive product gallery
-- Category-based styling
-- Interactive cart functionality
-- Clean, modern design
+4. **Code Style**
+   - Use TypeScript features appropriately
+   - Follow ESLint and Prettier configurations
+   - Write clear, self-documenting code
