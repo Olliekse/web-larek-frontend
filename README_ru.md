@@ -116,18 +116,85 @@ _Диаграмма классов UML, показывающая отношен�
 Основная система обработки событий, которая позволяет компонентам общаться между всеми частями приложения.
 
 ```typescript
-class EventEmitter {
-	// Карта имен событий на функции обратного вызова
-	private events: Map<string, Set<Callback>>;
+type EventName = string | RegExp;
+type Subscriber = Function;
+type EmitterEvent = {
+	eventName: string;
+	data: unknown;
+};
 
-	// Регистрирует функцию обратного вызова для конкретного события
-	on(event: string, callback: Function): void;
+export interface IEvents {
+	on<T extends object>(event: EventName, callback: (data: T) => void): void;
+	emit<T extends object>(event: string, data?: T): void;
+	trigger<T extends object>(
+		event: string,
+		context?: Partial<T>
+	): (data: T) => void;
+}
 
-	// Удаляет зарегистрированную функцию обратного вызова
-	off(event: string, callback: Function): void;
+export class EventEmitter implements IEvents {
+	_events: Map<EventName, Set<Subscriber>>;
 
-	// Вызывает событие с необязательными данными
-	emit(event: string, data?: any): void;
+	constructor() {
+		this._events = new Map<EventName, Set<Subscriber>>();
+	}
+
+	// Установка обработчика события
+	on<T extends object>(eventName: EventName, callback: (event: T) => void) {
+		if (!this._events.has(eventName)) {
+			this._events.set(eventName, new Set<Subscriber>());
+		}
+		this._events.get(eventName)?.add(callback);
+	}
+
+	// Удаление обработчика события
+	off(eventName: EventName, callback: Subscriber) {
+		if (this._events.has(eventName)) {
+			this._events.get(eventName)!.delete(callback);
+			if (this._events.get(eventName)?.size === 0) {
+				this._events.delete(eventName);
+			}
+		}
+	}
+
+	// Вызов события с данными
+	emit<T extends object>(eventName: string, data?: T) {
+		this._events.forEach((subscribers, name) => {
+			if (name === '*')
+				subscribers.forEach((callback) =>
+					callback({
+						eventName,
+						data,
+					})
+				);
+			if (
+				(name instanceof RegExp && name.test(eventName)) ||
+				name === eventName
+			) {
+				subscribers.forEach((callback) => callback(data));
+			}
+		});
+	}
+
+	// Прослушивание всех событий
+	onAll(callback: (event: EmitterEvent) => void) {
+		this.on('*', callback);
+	}
+
+	// Сброс всех обработчиков
+	offAll() {
+		this._events = new Map<string, Set<Subscriber>>();
+	}
+
+	// Создание триггера, генерирующего событие при вызове
+	trigger<T extends object>(eventName: string, context?: Partial<T>) {
+		return (event: object = {}) => {
+			this.emit(eventName, {
+				...(event || {}),
+				...(context || {}),
+			});
+		};
+	}
 }
 ```
 
@@ -136,31 +203,70 @@ class EventEmitter {
 Абстрактный базовый класс для всех UI-компонентов в приложении. Обеспечивает общую функциональность для рендеринга и обработки событий.
 
 ```typescript
-abstract class Component<T> {
-	// Корневой DOM-элемент
+export abstract class Component<T> {
+	/** Корневой DOM-элемент компонента */
 	protected container: HTMLElement;
-
-	// Ссылка на систему событий
+	/** Эмиттер событий для коммуникации компонентов */
 	protected events: IEvents;
 
-	// Безопасно обновляет текстовое содержимое
-	protected setText(element: HTMLElement, value: unknown): void;
+	/**
+	 * Создает новый экземпляр компонента
+	 * @param {HTMLElement} container - Корневой элемент для этого компонента
+	 * @param {IEvents} [events] - Опциональный эмиттер событий для коммуникации компонентов
+	 */
+	constructor(container: HTMLElement, events?: IEvents) {
+		this.container = container;
+		this.events = events;
+	}
 
-	// Устанавливает источник изображения с обработкой ошибок
-	protected setImage(
-		element: HTMLImageElement,
-		src: string,
-		alt?: string
-	): void;
+	/**
+	 * Устанавливает текстовое содержимое HTML-элемента
+	 */
+	protected setText(element: HTMLElement, value: unknown) {
+		if (element) {
+			element.textContent = String(value);
+		}
+	}
 
-	// Управляет состоянием отключения
-	protected setDisabled(element: HTMLElement, state: boolean): void;
+	/**
+	 * Устанавливает источник и альтернативный текст для элемента изображения
+	 */
+	protected setImage(element: HTMLImageElement, src: string, alt?: string) {
+		if (element) {
+			element.src = src;
+			if (alt) {
+				element.alt = alt;
+			}
+		}
+	}
 
-	// Вызывает события через систему событий
-	protected emit(event: string, payload?: object): void;
+	/**
+	 * Устанавливает или удаляет атрибут disabled у HTML-элемента
+	 */
+	protected setDisabled(element: HTMLElement, state: boolean) {
+		if (element) {
+			if (state) {
+				element.setAttribute('disabled', 'disabled');
+			} else {
+				element.removeAttribute('disabled');
+			}
+		}
+	}
 
-	// Рендерит содержимое компонента
-	abstract render(data?: T): HTMLElement;
+	/**
+	 * Отправляет событие через эмиттер событий компонента
+	 */
+	protected emit(event: string, payload?: object) {
+		if (this.events) {
+			this.events.emit(event, payload);
+		}
+	}
+
+	/**
+	 * Рендерит компонент с предоставленными данными
+	 * Должен быть реализован каждым классом компонента
+	 */
+	abstract render(data?: Partial<T>): HTMLElement;
 }
 ```
 
@@ -169,24 +275,49 @@ abstract class Component<T> {
 Базовый класс для всех моделей данных в приложении. Реализует управление состоянием с безопасными обновлениями типов.
 
 ```typescript
-abstract class Model<T> {
-	// Система событий для трансляции изменений состояния
-	protected events: IEvents;
+/**
+ * Проверка типа для определения, является ли объект экземпляром Model
+ */
+export const isModel = (obj: unknown): obj is Model<any> => {
+	return obj instanceof Model;
+};
 
-	// Контейнер состояния с безопасными типами
+export abstract class Model<T> {
+	/** Эмиттер событий для изменений состояния модели */
+	protected events: IEvents;
+	/** Внутреннее хранилище состояния */
 	private state: T;
 
-	// Создает новую модель с начальным состоянием и системой событий
-	constructor(data: Partial<T>, events: IEvents);
+	/**
+	 * Создает новый экземпляр модели
+	 * @param {Partial<T>} data - Начальные данные состояния
+	 * @param {IEvents} events - Эмиттер событий для изменений состояния
+	 */
+	constructor(data: Partial<T>, events: IEvents) {
+		this.state = data as T;
+		this.events = events;
+	}
 
-	// Получает текущее состояние
-	public getState(): T;
+	/**
+	 * Получает текущее состояние модели
+	 */
+	public getState(): T {
+		return this.state;
+	}
 
-	// Обновляет состояние новыми данными
-	protected updateState(newState: T): void;
+	/**
+	 * Обновляет состояние модели
+	 */
+	protected updateState(newState: T) {
+		this.state = newState;
+	}
 
-	// Уведомляет подписчиков об изменениях состояния
-	protected emitChanges(event: string): void;
+	/**
+	 * Отправляет событие изменения состояния
+	 */
+	protected emitChanges(event: string) {
+		this.events.emit(event);
+	}
 }
 ```
 
@@ -270,7 +401,7 @@ class Card extends Component<ICard> {
 
 ##### PreviewCard
 
-Расширенная версия компонента Card для детального просмотра продуктов. Добавляет возможность отображения описания, сохраняя всю базовую функциональность карточки.
+Расши��енная версия компонента Card для детального просмотра продуктов. Добавляет возможность отображения описания, сохраняя всю базовую функциональность карточки.
 
 ```typescript
 class PreviewCard extends Card {
@@ -494,171 +625,120 @@ sequenceDiagram
 
 ### Примеры реализации
 
-#### 1. Просмотр и предварительный просмотр продуктов
+#### 1. Загрузка и предварительный просмотр продуктов
 
 ```typescript
-// Шаг 1: Инициализация отображения каталога
-events.on('items:changed', () => {
-	const state = appData.getState();
-	page.catalog = state.catalog.map((item) => createProductCard(item));
-});
+// Этап 1: Инициализация API и получение списка продуктов
+api
+	.getProductList()
+	.then((items) => {
+		appData.setCatalog(items);
+		const state = appData.getState();
 
-// Шаг 2: Создание карточки продукта с обработчиком клика
-function createProductCard(item: IProduct) {
-	return new Card(cardTemplate, {
-		onClick: () => {
-			appData.setPreview(item);
-			modal.open();
-		},
-	}).render(item);
-}
+		// Этап 2: Создание шаблона карточки для каждого продукта
+		const cards = state.catalog.map((item) => {
+			const cardElement = cardCatalogTemplate.content.cloneNode(
+				true
+			) as HTMLElement;
 
-// Шаг 3: Обработка изменений состояния предварительного просмотра
-events.on('preview:changed', () => {
-	const state = appData.getState();
-	if (state.preview) {
-		showProductPreview(state.preview);
-	}
-});
+			// Этап 3: Настройка обработчика клика для предпросмотра
+			const card = new Card(cardElement.firstElementChild as HTMLElement, {
+				onClick: () => {
+					appData.setPreview(item);
+					modal.open();
+				},
+			});
 
-// Шаг 4: Отображение предварительного просмотра продукта
-function showProductPreview(item: IProduct) {
-	const previewCard = new PreviewCard(previewTemplate, {
-		onClick: () => appData.addToBasket(item),
-	});
-	modal.render({ content: previewCard.render(item) });
-}
+			// Этап 4: Отрисовка карточки с данными продукта
+			return card.render({
+				title: item.title,
+				image: item.image,
+				price: item.price,
+				category: item.category,
+			});
+		});
 
-// Шаг 5: Обработка закрытия предварительного просмотра
-modal.on('close', () => {
-	appData.setPreview(null);
-});
+		// Этап 5: Обновление каталога страницы всеми карточками
+		page.catalog = cards;
+	})
+	.catch(console.error);
 ```
 
-#### 2. Обработка форм и валидация
+#### 2. Управление корзиной покупок
 
 ```typescript
-// Шаг 1: Инициализация формы с валидацией
-class OrderForm extends Form {
-	constructor(container: HTMLElement, events: IEvents) {
-		super(container, events);
-		this.setupValidation();
-	}
-
-	// Шаг 2: Настройка правил валидации полей
-	private setupValidation() {
-		const rules = {
-			email: (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
-			phone: (value: string) => /^\+?[\d\s-]{10,}$/.test(value),
-			address: (value: string) => value.length >= 10,
-		};
-		this.setValidationRules(rules);
-	}
-
-	// Шаг 3: Проверка отдельных полей
-	protected validateField(field: HTMLInputElement): boolean {
-		const value = field.value.trim();
-		if (!value && field.required) return false;
-		return this.rules[field.name]?.(value) ?? true;
-	}
-
-	// Шаг 4: Обработка отправки формы
-	protected handleSubmit(event: Event) {
-		event.preventDefault();
-		if (this.validateForm()) {
-			this.emit('submit', this.getFormData());
-		}
-	}
-
-	// Шаг 5: Отображение результатов валидации
-	protected showValidationResults() {
-		const errors = Array.from(this._validationErrors);
-		this.errors = errors;
-		this.valid = errors.length === 0;
-	}
-}
-```
-
-#### 3. Управление корзиной покупок
-
-```typescript
-// Шаг 1: Добавление товара в корзину
-function addToBasket(item: IProduct) {
-	appData.addToBasket(item);
-	localStorage.setItem('basket', JSON.stringify(appData.getState().basket));
-}
-
-// Шаг 2: Обновление отображения корзины
 events.on('basket:changed', () => {
+	// Этап 1: Получение текущего состояния и обновление счетчика
 	const state = appData.getState();
-	updateBasketUI(state.basket);
-	updateTotalPrice(state.basket);
+	page.counter = state.basket.length;
+
+	// Этап 2: Создание элементов карточек для товаров в корзине
+	const basketItems = state.basket.map((item) => {
+		const cardElement = basketItemTemplate.content.cloneNode(
+			true
+		) as HTMLElement;
+
+		// Этап 3: Настройка функционала удаления
+		const card = new Card(cardElement.firstElementChild as HTMLElement, {
+			onDelete: () => {
+				appData.removeFromBasket(item.id);
+			},
+		});
+
+		// Этап 4: Отрисовка отдельного товара в корзине
+		return card.render({
+			title: item.title,
+			price: item.price,
+			category: item.category,
+		});
+	});
+
+	// Этап 5: Обновление UI корзины и сохранение в хранилище
+	const basketTotal = state.basket.reduce((sum, item) => sum + item.price, 0);
+	basketModal.render({
+		content: basket.render({
+			items: basketItems,
+			total: basketTotal,
+		}),
+	});
+	localStorage.setItem('basket', JSON.stringify(state.basket));
 });
-
-// Шаг 3: Расчет общей суммы
-function updateTotalPrice(items: IProduct[]) {
-	const total = items.reduce((sum, item) => sum + item.price, 0);
-	appData.setOrderField('total', total);
-}
-
-// Шаг 4: Удаление товара из корзины
-function removeFromBasket(id: string) {
-	appData.removeFromBasket(id);
-	localStorage.setItem('basket', JSON.stringify(appData.getState().basket));
-}
-
-// Шаг 5: Обработка процесса оформления заказа
-function initiateCheckout() {
-	if (appData.getState().basket.length > 0) {
-		modal.render({ content: new OrderForm(formTemplate, events) });
-		modal.open();
-	}
-}
 ```
 
-#### 4. Обработка заказов
+#### 3. Обработка заказов
 
 ```typescript
-// Шаг 1: Сбор данных заказа
-function prepareOrderData(): IOrder {
+events.on('contacts:submit', (data: { email: string; phone: string }) => {
+	// Этап 1: Обновление полей заказа контактной информацией
+	appData.setOrderField('email', data.email);
+	appData.setOrderField('phone', data.phone);
+
+	// Этап 2: Подготовка данных заказа
 	const state = appData.getState();
-	return {
-		items: state.basket.map((item) => item.id),
-		total: calculateTotal(state.basket),
+	const orderData = {
 		...state.order,
+		items: state.basket.map((item) => item.id),
+		total: state.basket.reduce((sum, item) => sum + item.price, 0),
 	};
-}
 
-// Шаг 2: Проверка данных заказа
-function validateOrder(order: IOrder): string[] {
-	const errors = appData.validateOrder();
-	return Object.values(errors);
-}
+	// Этап 3: Отправка заказа в API
+	api
+		.createOrder(orderData)
+		.then((result) => {
+			// Этап 4: Обработка успешного заказа
+			orderModal.close();
+			successModal.render({
+				content: success.render({
+					total: result.total,
+				}),
+			});
+			successModal.open();
 
-// Шаг 3: Отправка заказа на бэкенд
-async function submitOrder(order: IOrder) {
-	try {
-		const response = await api.createOrder(order);
-		handleOrderSuccess(response);
-	} catch (error) {
-		handleOrderError(error);
-	}
-}
-
-// Шаг 4: Обработка успешного заказа
-function handleOrderSuccess(response: IOrderResult) {
-	appData.clearBasket();
-	localStorage.removeItem('basket');
-	showSuccessMessage(response);
-}
-
-// Шаг 5: Очистка после заказа
-function showSuccessMessage(response: IOrderResult) {
-	const success = new Success(successTemplate);
-	modal.render({
-		content: success.render({ total: response.total }),
-	});
-}
+			// Этап 5: Очистка после успешного заказа
+			appData.clearBasket();
+		})
+		.catch(console.error);
+});
 ```
 
 ### Система событий и справка по API
@@ -689,47 +769,109 @@ function showSuccessMessage(response: IOrderResult) {
 Базовый класс для коммуникации с API. Предоставляет методы для выполнения HTTP-запросов и обработки ответов.
 
 ```typescript
-class Api {
-	// Базовый URL для конечных точек API
-	readonly baseUrl: string;
+/**
+ * Общий тип для ответов API со списками
+ */
+export type ApiListResponse<Type> = {
+	total: number;
+	items: Type[];
+};
 
-	// Опции запроса по умолчанию
+/**
+ * Допустимые HTTP-методы для POST-подобных операций
+ */
+export type ApiPostMethods = 'POST' | 'PUT' | 'DELETE';
+
+/**
+ * Базовый класс API-клиента
+ * Предоставляет общую функциональность для выполнения HTTP-запросов
+ */
+export class Api {
+	/** Базовый URL для всех API-запросов */
+	readonly baseUrl: string;
+	/** Параметры запросов по умолчанию */
 	protected options: RequestInit;
 
-	// Создает экземпляр API с базовым URL и опциями по умолчанию
-	constructor(baseUrl: string, options: RequestInit = {});
+	/**
+	 * Создает новый экземпляр API-клиента
+	 * @param {string} baseUrl - Базовый URL для всех API-запросов
+	 * @param {RequestInit} [options={}] - Параметры fetch по умолчанию
+	 */
+	constructor(baseUrl: string, options: RequestInit = {}) {
+		this.baseUrl = baseUrl;
+		this.options = {
+			headers: {
+				'Content-Type': 'application/json',
+				...((options.headers as object) ?? {}),
+			},
+		};
+	}
 
-	// Выполняет GET-запрос к указанной конечной точке
-	protected get(uri: string): Promise<unknown>;
+	/**
+	 * Обрабатывает ответ API
+	 * Автоматически парсит JSON и обрабатывает ошибки
+	 */
+	protected handleResponse(response: Response): Promise<object> {
+		if (response.ok) return response.json();
+		else
+			return response
+				.json()
+				.then((data) => Promise.reject(data.error ?? response.statusText));
+	}
 
-	// Выполняет POST-запрос с данными к указанной конечной точке
-	protected post(uri: string, data: object): Promise<unknown>;
+	/**
+	 * Выполняет GET-запрос к API
+	 */
+	get(uri: string) {
+		return fetch(this.baseUrl + uri, {
+			...this.options,
+			method: 'GET',
+		}).then(this.handleResponse);
+	}
 
-	// Обрабатывает ответ API и проверку ошибок
-	protected handleResponse(response: Response): Promise<unknown>;
+	/**
+	 * Выполняет POST, PUT или DELETE запрос к API
+	 */
+	post(uri: string, data: object, method: ApiPostMethods = 'POST') {
+		return fetch(this.baseUrl + uri, {
+			...this.options,
+			method,
+			body: JSON.stringify(data),
+		}).then(this.handleResponse);
+	}
 }
-```
 
-#### LarekAPI
-
-Клиент API, который обрабатывает всю коммуникацию с бэкендом. Управляет получением продуктов и отправкой заказов.
-
-```typescript
-class LarekAPI extends Api {
-	// Базовый URL для изображений продуктов
+/**
+ * API-клиент для взаимодействия с бэкендом
+ * Расширяет базовый класс Api специфичными методами для магазина Web Larek
+ */
+export class LarekAPI extends Api {
 	readonly cdn: string;
 
-	// Создает клиент API с CDN и конечными точками API
-	constructor(cdn: string, baseUrl: string, options?: RequestInit);
+	constructor(cdn: string, baseUrl: string, options?: RequestInit) {
+		super(baseUrl, options);
+		this.cdn = cdn;
+	}
 
-	// Получает и обрабатывает список продуктов
-	getProductList(): Promise<IProduct[]>;
+	/**
+	 * Получает список продуктов из API
+	 * Добавляет CDN URL к изображениям продуктов
+	 */
+	getProductList(): Promise<IProduct[]> {
+		return this.get('/product').then((data: ApiListResponse<IProduct>) =>
+			data.items.map((item) => ({
+				...item,
+				image: this.cdn + item.image,
+			}))
+		);
+	}
 
-	// Отправляет заказ на бэкенд
-	createOrder(order: IOrder): Promise<IOrderResult>;
-
-	// Добавляет URL CDN к изображениям продуктов
-	private addCdnUrl(items: IProduct[]): IProduct[];
+	/**
+	 * Создает новый заказ в системе
+	 */
+	createOrder(order: IOrder): Promise<IOrderResult> {
+		return this.post('/order', order).then((data: IOrderResult) => data);
+	}
 }
 ```
 

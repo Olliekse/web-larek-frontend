@@ -116,18 +116,85 @@ The diagram shows:
 Core event handling system that enables component communication between all parts of the application.
 
 ```typescript
-class EventEmitter {
-	// Map of event names to callback functions
-	private events: Map<string, Set<Callback>>;
+type EventName = string | RegExp;
+type Subscriber = Function;
+type EmitterEvent = {
+	eventName: string;
+	data: unknown;
+};
 
-	// Registers a callback for a specific event
-	on(event: string, callback: Function): void;
+export interface IEvents {
+	on<T extends object>(event: EventName, callback: (data: T) => void): void;
+	emit<T extends object>(event: string, data?: T): void;
+	trigger<T extends object>(
+		event: string,
+		context?: Partial<T>
+	): (data: T) => void;
+}
 
-	// Removes a registered callback
-	off(event: string, callback: Function): void;
+export class EventEmitter implements IEvents {
+	_events: Map<EventName, Set<Subscriber>>;
 
-	// Triggers an event with optional data
-	emit(event: string, data?: any): void;
+	constructor() {
+		this._events = new Map<EventName, Set<Subscriber>>();
+	}
+
+	// Set up event handler
+	on<T extends object>(eventName: EventName, callback: (event: T) => void) {
+		if (!this._events.has(eventName)) {
+			this._events.set(eventName, new Set<Subscriber>());
+		}
+		this._events.get(eventName)?.add(callback);
+	}
+
+	// Remove event handler
+	off(eventName: EventName, callback: Subscriber) {
+		if (this._events.has(eventName)) {
+			this._events.get(eventName)!.delete(callback);
+			if (this._events.get(eventName)?.size === 0) {
+				this._events.delete(eventName);
+			}
+		}
+	}
+
+	// Trigger event with data
+	emit<T extends object>(eventName: string, data?: T) {
+		this._events.forEach((subscribers, name) => {
+			if (name === '*')
+				subscribers.forEach((callback) =>
+					callback({
+						eventName,
+						data,
+					})
+				);
+			if (
+				(name instanceof RegExp && name.test(eventName)) ||
+				name === eventName
+			) {
+				subscribers.forEach((callback) => callback(data));
+			}
+		});
+	}
+
+	// Listen to all events
+	onAll(callback: (event: EmitterEvent) => void) {
+		this.on('*', callback);
+	}
+
+	// Reset all handlers
+	offAll() {
+		this._events = new Map<string, Set<Subscriber>>();
+	}
+
+	// Create a trigger callback that generates an event when called
+	trigger<T extends object>(eventName: string, context?: Partial<T>) {
+		return (event: object = {}) => {
+			this.emit(eventName, {
+				...(event || {}),
+				...(context || {}),
+			});
+		};
+	}
 }
 ```
 
@@ -136,31 +203,70 @@ class EventEmitter {
 Abstract base class for all UI components in the application. Provides common functionality for rendering and event handling.
 
 ```typescript
-abstract class Component<T> {
-	// Root DOM element
+export abstract class Component<T> {
+	/** The root DOM element of the component */
 	protected container: HTMLElement;
-
-	// Event system reference
+	/** Event emitter for component communication */
 	protected events: IEvents;
 
-	// Updates text content safely
-	protected setText(element: HTMLElement, value: unknown): void;
+	/**
+	 * Creates a new component instance
+	 * @param {HTMLElement} container - The root element for this component
+	 * @param {IEvents} [events] - Optional event emitter for component communication
+	 */
+	constructor(container: HTMLElement, events?: IEvents) {
+		this.container = container;
+		this.events = events;
+	}
 
-	// Sets image source with error handling
-	protected setImage(
-		element: HTMLImageElement,
-		src: string,
-		alt?: string
-	): void;
+	/**
+	 * Sets the text content of an HTML element
+	 */
+	protected setText(element: HTMLElement, value: unknown) {
+		if (element) {
+			element.textContent = String(value);
+		}
+	}
 
-	// Manages disabled state
-	protected setDisabled(element: HTMLElement, state: boolean): void;
+	/**
+	 * Sets the source and alt text of an image element
+	 */
+	protected setImage(element: HTMLImageElement, src: string, alt?: string) {
+		if (element) {
+			element.src = src;
+			if (alt) {
+				element.alt = alt;
+			}
+		}
+	}
 
-	// Emits events through the event system
-	protected emit(event: string, payload?: object): void;
+	/**
+	 * Sets or removes the disabled attribute of an HTML element
+	 */
+	protected setDisabled(element: HTMLElement, state: boolean) {
+		if (element) {
+			if (state) {
+				element.setAttribute('disabled', 'disabled');
+			} else {
+				element.removeAttribute('disabled');
+			}
+		}
+	}
 
-	// Renders component content
-	abstract render(data?: T): HTMLElement;
+	/**
+	 * Emits an event through the component's event emitter
+	 */
+	protected emit(event: string, payload?: object) {
+		if (this.events) {
+			this.events.emit(event, payload);
+		}
+	}
+
+	/**
+	 * Renders the component with the provided data
+	 * Must be implemented by each component class
+	 */
+	abstract render(data?: Partial<T>): HTMLElement;
 }
 ```
 
@@ -169,24 +275,49 @@ abstract class Component<T> {
 Base class for all data models in the application. Implements state management with type-safe updates.
 
 ```typescript
-abstract class Model<T> {
-	// Event system for broadcasting state changes
-	protected events: IEvents;
+/**
+ * Type guard to check if an object is an instance of Model
+ */
+export const isModel = (obj: unknown): obj is Model<any> => {
+	return obj instanceof Model;
+};
 
-	// Type-safe state container
+export abstract class Model<T> {
+	/** Event emitter for model state changes */
+	protected events: IEvents;
+	/** Internal state storage */
 	private state: T;
 
-	// Creates a new model with initial state and event system
-	constructor(data: Partial<T>, events: IEvents);
+	/**
+	 * Creates a new model instance
+	 * @param {Partial<T>} data - Initial state data
+	 * @param {IEvents} events - Event emitter for state changes
+	 */
+	constructor(data: Partial<T>, events: IEvents) {
+		this.state = data as T;
+		this.events = events;
+	}
 
-	// Retrieves the current state
-	public getState(): T;
+	/**
+	 * Gets the current state of the model
+	 */
+	public getState(): T {
+		return this.state;
+	}
 
-	// Updates the state with new data
-	protected updateState(newState: T): void;
+	/**
+	 * Updates the model's state
+	 */
+	protected updateState(newState: T) {
+		this.state = newState;
+	}
 
-	// Notifies subscribers about state changes
-	protected emitChanges(event: string): void;
+	/**
+	 * Emits a state change event
+	 */
+	protected emitChanges(event: string) {
+		this.events.emit(event);
+	}
 }
 ```
 
@@ -494,171 +625,120 @@ sequenceDiagram
 
 ### Implementation Examples
 
-#### 1. Browsing and Previewing Products
+#### 1. Product Preview and Catalog Handling
 
 ```typescript
-// Step 1: Initialize catalog display
-events.on('items:changed', () => {
-	const state = appData.getState();
-	page.catalog = state.catalog.map((item) => createProductCard(item));
-});
+// Stage 1: Initialize API and fetch product list
+api
+	.getProductList()
+	.then((items) => {
+		appData.setCatalog(items);
+		const state = appData.getState();
 
-// Step 2: Create product card with click handler
-function createProductCard(item: IProduct) {
-	return new Card(cardTemplate, {
-		onClick: () => {
-			appData.setPreview(item);
-			modal.open();
-		},
-	}).render(item);
-}
+		// Stage 2: Create card template for each product
+		const cards = state.catalog.map((item) => {
+			const cardElement = cardCatalogTemplate.content.cloneNode(
+				true
+			) as HTMLElement;
 
-// Step 3: Handle preview state changes
-events.on('preview:changed', () => {
-	const state = appData.getState();
-	if (state.preview) {
-		showProductPreview(state.preview);
-	}
-});
+			// Stage 3: Set up click handler for preview
+			const card = new Card(cardElement.firstElementChild as HTMLElement, {
+				onClick: () => {
+					appData.setPreview(item);
+					modal.open();
+				},
+			});
 
-// Step 4: Display product preview
-function showProductPreview(item: IProduct) {
-	const previewCard = new PreviewCard(previewTemplate, {
-		onClick: () => appData.addToBasket(item),
-	});
-	modal.render({ content: previewCard.render(item) });
-}
+			// Stage 4: Render card with product data
+			return card.render({
+				title: item.title,
+				image: item.image,
+				price: item.price,
+				category: item.category,
+			});
+		});
 
-// Step 5: Handle preview closing
-modal.on('close', () => {
-	appData.setPreview(null);
-});
+		// Stage 5: Update page catalog with all cards
+		page.catalog = cards;
+	})
+	.catch(console.error);
 ```
 
-#### 2. Form Handling and Validation
+#### 2. Shopping Cart Management
 
 ```typescript
-// Step 1: Initialize form with validation
-class OrderForm extends Form {
-	constructor(container: HTMLElement, events: IEvents) {
-		super(container, events);
-		this.setupValidation();
-	}
-
-	// Step 2: Set up field validation rules
-	private setupValidation() {
-		const rules = {
-			email: (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
-			phone: (value: string) => /^\+?[\d\s-]{10,}$/.test(value),
-			address: (value: string) => value.length >= 10,
-		};
-		this.setValidationRules(rules);
-	}
-
-	// Step 3: Validate individual fields
-	protected validateField(field: HTMLInputElement): boolean {
-		const value = field.value.trim();
-		if (!value && field.required) return false;
-		return this.rules[field.name]?.(value) ?? true;
-	}
-
-	// Step 4: Handle form submission
-	protected handleSubmit(event: Event) {
-		event.preventDefault();
-		if (this.validateForm()) {
-			this.emit('submit', this.getFormData());
-		}
-	}
-
-	// Step 5: Display validation results
-	protected showValidationResults() {
-		const errors = Array.from(this._validationErrors);
-		this.errors = errors;
-		this.valid = errors.length === 0;
-	}
-}
-```
-
-#### 3. Shopping Cart Management
-
-```typescript
-// Step 1: Add item to basket
-function addToBasket(item: IProduct) {
-	appData.addToBasket(item);
-	localStorage.setItem('basket', JSON.stringify(appData.getState().basket));
-}
-
-// Step 2: Update basket display
 events.on('basket:changed', () => {
+	// Stage 1: Get current state and update counter
 	const state = appData.getState();
-	updateBasketUI(state.basket);
-	updateTotalPrice(state.basket);
+	page.counter = state.basket.length;
+
+	// Stage 2: Create card elements for basket items
+	const basketItems = state.basket.map((item) => {
+		const cardElement = basketItemTemplate.content.cloneNode(
+			true
+		) as HTMLElement;
+
+		// Stage 3: Set up delete functionality
+		const card = new Card(cardElement.firstElementChild as HTMLElement, {
+			onDelete: () => {
+				appData.removeFromBasket(item.id);
+			},
+		});
+
+		// Stage 4: Render individual basket item
+		return card.render({
+			title: item.title,
+			price: item.price,
+			category: item.category,
+		});
+	});
+
+	// Stage 5: Update basket UI and persist to storage
+	const basketTotal = state.basket.reduce((sum, item) => sum + item.price, 0);
+	basketModal.render({
+		content: basket.render({
+			items: basketItems,
+			total: basketTotal,
+		}),
+	});
+	localStorage.setItem('basket', JSON.stringify(state.basket));
 });
-
-// Step 3: Calculate total price
-function updateTotalPrice(items: IProduct[]) {
-	const total = items.reduce((sum, item) => sum + item.price, 0);
-	appData.setOrderField('total', total);
-}
-
-// Step 4: Remove item from basket
-function removeFromBasket(id: string) {
-	appData.removeFromBasket(id);
-	localStorage.setItem('basket', JSON.stringify(appData.getState().basket));
-}
-
-// Step 5: Handle checkout process
-function initiateCheckout() {
-	if (appData.getState().basket.length > 0) {
-		modal.render({ content: new OrderForm(formTemplate, events) });
-		modal.open();
-	}
-}
 ```
 
-#### 4. Order Processing
+#### 3. Order Processing
 
 ```typescript
-// Step 1: Collect order data
-function prepareOrderData(): IOrder {
+events.on('contacts:submit', (data: { email: string; phone: string }) => {
+	// Stage 1: Update order fields with contact info
+	appData.setOrderField('email', data.email);
+	appData.setOrderField('phone', data.phone);
+
+	// Stage 2: Prepare order data
 	const state = appData.getState();
-	return {
-		items: state.basket.map((item) => item.id),
-		total: calculateTotal(state.basket),
+	const orderData = {
 		...state.order,
+		items: state.basket.map((item) => item.id),
+		total: state.basket.reduce((sum, item) => sum + item.price, 0),
 	};
-}
 
-// Step 2: Validate order data
-function validateOrder(order: IOrder): string[] {
-	const errors = appData.validateOrder();
-	return Object.values(errors);
-}
+	// Stage 3: Submit order to API
+	api
+		.createOrder(orderData)
+		.then((result) => {
+			// Stage 4: Handle successful order
+			orderModal.close();
+			successModal.render({
+				content: success.render({
+					total: result.total,
+				}),
+			});
+			successModal.open();
 
-// Step 3: Submit order to backend
-async function submitOrder(order: IOrder) {
-	try {
-		const response = await api.createOrder(order);
-		handleOrderSuccess(response);
-	} catch (error) {
-		handleOrderError(error);
-	}
-}
-
-// Step 4: Handle successful order
-function handleOrderSuccess(response: IOrderResult) {
-	appData.clearBasket();
-	localStorage.removeItem('basket');
-	showSuccessMessage(response);
-}
-
-// Step 5: Clean up after order
-function showSuccessMessage(response: IOrderResult) {
-	const success = new Success(successTemplate);
-	modal.render({
-		content: success.render({ total: response.total }),
-	});
-}
+			// Stage 5: Clean up after successful order
+			appData.clearBasket();
+		})
+		.catch(console.error);
+});
 ```
 
 ### Event System and API Reference
@@ -689,47 +769,109 @@ The application uses events for component communication. Here's the complete ref
 Base class for API communication. Provides methods for making HTTP requests and handling responses.
 
 ```typescript
-class Api {
-	// Base URL for API endpoints
-	readonly baseUrl: string;
+/**
+ * Generic type for API list responses
+ */
+export type ApiListResponse<Type> = {
+	total: number;
+	items: Type[];
+};
 
-	// Default request options
+/**
+ * Valid HTTP methods for POST-like operations
+ */
+export type ApiPostMethods = 'POST' | 'PUT' | 'DELETE';
+
+/**
+ * Base API client class
+ * Provides common functionality for making HTTP requests
+ */
+export class Api {
+	/** Base URL for all API requests */
+	readonly baseUrl: string;
+	/** Default request options */
 	protected options: RequestInit;
 
-	// Creates API instance with base URL and default options
-	constructor(baseUrl: string, options: RequestInit = {});
+	/**
+	 * Creates a new API client instance
+	 * @param {string} baseUrl - Base URL for all API requests
+	 * @param {RequestInit} [options={}] - Default fetch options
+	 */
+	constructor(baseUrl: string, options: RequestInit = {}) {
+		this.baseUrl = baseUrl;
+		this.options = {
+			headers: {
+				'Content-Type': 'application/json',
+				...((options.headers as object) ?? {}),
+			},
+		};
+	}
 
-	// Makes a GET request to the specified endpoint
-	protected get(uri: string): Promise<unknown>;
+	/**
+	 * Handles API response
+	 * Automatically parses JSON and handles errors
+	 */
+	protected handleResponse(response: Response): Promise<object> {
+		if (response.ok) return response.json();
+		else
+			return response
+				.json()
+				.then((data) => Promise.reject(data.error ?? response.statusText));
+	}
 
-	// Makes a POST request with data to the specified endpoint
-	protected post(uri: string, data: object): Promise<unknown>;
+	/**
+	 * Makes a GET request to the API
+	 */
+	get(uri: string) {
+		return fetch(this.baseUrl + uri, {
+			...this.options,
+			method: 'GET',
+		}).then(this.handleResponse);
+	}
 
-	// Handles API response and error checking
-	protected handleResponse(response: Response): Promise<unknown>;
+	/**
+	 * Makes a POST, PUT, or DELETE request to the API
+	 */
+	post(uri: string, data: object, method: ApiPostMethods = 'POST') {
+		return fetch(this.baseUrl + uri, {
+			...this.options,
+			method,
+			body: JSON.stringify(data),
+		}).then(this.handleResponse);
+	}
 }
-```
 
-#### LarekAPI
-
-API client that handles all backend communication. Manages product fetching and order submission.
-
-```typescript
-class LarekAPI extends Api {
-	// Base URL for product images
+/**
+ * API client for handling communication with the backend
+ * Extends the base Api class with specific methods for the Web Larek store
+ */
+export class LarekAPI extends Api {
 	readonly cdn: string;
 
-	// Creates API client with CDN and API endpoints
-	constructor(cdn: string, baseUrl: string, options?: RequestInit);
+	constructor(cdn: string, baseUrl: string, options?: RequestInit) {
+		super(baseUrl, options);
+		this.cdn = cdn;
+	}
 
-	// Fetches and processes product list
-	getProductList(): Promise<IProduct[]>;
+	/**
+	 * Fetches the list of products from the API
+	 * Adds CDN URL to product images
+	 */
+	getProductList(): Promise<IProduct[]> {
+		return this.get('/product').then((data: ApiListResponse<IProduct>) =>
+			data.items.map((item) => ({
+				...item,
+				image: this.cdn + item.image,
+			}))
+		);
+	}
 
-	// Submits order to backend
-	createOrder(order: IOrder): Promise<IOrderResult>;
-
-	// Adds CDN URL to product images
-	private addCdnUrl(items: IProduct[]): IProduct[];
+	/**
+	 * Creates a new order in the system
+	 */
+	createOrder(order: IOrder): Promise<IOrderResult> {
+		return this.post('/order', order).then((data: IOrderResult) => data);
+	}
 }
 ```
 
