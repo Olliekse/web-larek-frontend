@@ -113,7 +113,7 @@ The diagram shows:
 
 ##### EventEmitter
 
-Core event handling system that enables component communication between all parts of the application.
+Core event handling system that enables component communication between all parts of the application. Supports pattern matching with RegExp for event names.
 
 ```typescript
 type EventName = string | RegExp;
@@ -139,7 +139,7 @@ export class EventEmitter implements IEvents {
 		this._events = new Map<EventName, Set<Subscriber>>();
 	}
 
-	// Set up event handler
+	// Set up event handler with support for string and RegExp patterns
 	on<T extends object>(eventName: EventName, callback: (event: T) => void) {
 		if (!this._events.has(eventName)) {
 			this._events.set(eventName, new Set<Subscriber>());
@@ -157,7 +157,7 @@ export class EventEmitter implements IEvents {
 		}
 	}
 
-	// Trigger event with data
+	// Trigger event with data, supporting pattern matching
 	emit<T extends object>(eventName: string, data?: T) {
 		this._events.forEach((subscribers, name) => {
 			if (name === '*')
@@ -176,14 +176,14 @@ export class EventEmitter implements IEvents {
 		});
 	}
 
-	// Listen to all events
+	// Listen to all events using wildcard
 	onAll(callback: (event: EmitterEvent) => void) {
 		this.on('*', callback);
 	}
 
 	// Reset all handlers
 	offAll() {
-		this._events = new Map<string, Set<Subscriber>>();
+		this._events = new Map<EventName, Set<Subscriber>>();
 	}
 
 	// Create a trigger callback that generates an event when called
@@ -198,9 +198,16 @@ export class EventEmitter implements IEvents {
 }
 ```
 
+Key features:
+
+- Pattern matching with RegExp for event names
+- Wildcard event listening with '\*'
+- Type-safe event data handling
+- Event context support in triggers
+
 ##### Component
 
-Abstract base class for all UI components in the application. Provides common functionality for rendering and event handling.
+Abstract base class for all UI components in the application. Provides common functionality for rendering and event handling with robust type safety and error checking.
 
 ```typescript
 export abstract class Component<T> {
@@ -220,7 +227,7 @@ export abstract class Component<T> {
 	}
 
 	/**
-	 * Sets the text content of an HTML element
+	 * Sets the text content of an HTML element with null checking
 	 */
 	protected setText(element: HTMLElement, value: unknown) {
 		if (element) {
@@ -229,7 +236,7 @@ export abstract class Component<T> {
 	}
 
 	/**
-	 * Sets the source and alt text of an image element
+	 * Sets the source and alt text of an image element with validation
 	 */
 	protected setImage(element: HTMLImageElement, src: string, alt?: string) {
 		if (element) {
@@ -254,7 +261,7 @@ export abstract class Component<T> {
 	}
 
 	/**
-	 * Emits an event through the component's event emitter
+	 * Emits an event through the component's event emitter with type safety
 	 */
 	protected emit(event: string, payload?: object) {
 		if (this.events) {
@@ -270,9 +277,16 @@ export abstract class Component<T> {
 }
 ```
 
+Key features:
+
+- Generic type parameter for component data
+- Null checking and validation for DOM operations
+- Type-safe event emission
+- Protected helper methods for common DOM operations
+
 ##### Model
 
-Base class for all data models in the application. Implements state management with type-safe updates.
+Base class for all data models in the application. Implements state management with type-safe updates and event emission.
 
 ```typescript
 /**
@@ -317,6 +331,52 @@ export abstract class Model<T> {
 	 */
 	protected emitChanges(event: string) {
 		this.events.emit(event);
+	}
+}
+```
+
+Key features:
+
+- Generic type parameter for state data
+- Type guard for runtime type checking
+- Protected state mutation methods
+- Event-driven state updates
+- Immutable state pattern
+
+Example implementation (AppData):
+
+```typescript
+export class AppData extends Model<IAppState> {
+	// Action types for state mutations
+	export enum ActionType {
+		SET_CATALOG = 'SET_CATALOG',
+		ADD_TO_BASKET = 'ADD_TO_BASKET',
+		REMOVE_FROM_BASKET = 'REMOVE_FROM_BASKET',
+		CLEAR_BASKET = 'CLEAR_BASKET',
+		SET_PREVIEW = 'SET_PREVIEW',
+		UPDATE_ORDER = 'UPDATE_ORDER',
+	}
+
+	private dispatch(
+		type: ActionType,
+		payload: IProduct[] | IProduct | string | OrderUpdatePayload | null
+	) {
+		// State updates with corresponding events
+		const eventMap: Record<ActionType, string> = {
+			[ActionType.SET_CATALOG]: 'items:changed',
+			[ActionType.ADD_TO_BASKET]: 'basket:changed',
+			[ActionType.REMOVE_FROM_BASKET]: 'basket:changed',
+			[ActionType.CLEAR_BASKET]: 'basket:changed',
+			[ActionType.SET_PREVIEW]: 'preview:changed',
+			[ActionType.UPDATE_ORDER]: 'order:changed',
+		};
+
+		// Update state and emit change event
+		this.updateState({
+			...this.getState(),
+			...newState,
+		});
+		this.emitChanges(eventMap[type]);
 	}
 }
 ```
@@ -456,136 +516,308 @@ class Modal extends Component<IModalData> {
 
 ##### Form
 
-Form component that handles user input validation and submission. Supports both order and contact information forms with real-time validation.
+Form component that handles user input validation and submission. Supports both order and contact information forms with real-time validation and error handling.
 
 ```typescript
-class Form extends Component<IFormState> {
-	// Submit button that triggers form submission
-	protected _submit: HTMLButtonElement;
+interface IFormState {
+	valid: boolean; // Whether the form is currently valid
+	errors: string[]; // List of validation error messages
+}
 
-	// Container for validation error messages
-	protected _errors: HTMLElement;
+export class Form extends Component<IFormState> {
+	protected _submit: HTMLButtonElement; // Form submit button
+	protected _errors: HTMLElement; // Container for error messages
+	protected _paymentButtons: NodeListOf<HTMLButtonElement>; // Payment method buttons
+	protected _address: HTMLInputElement; // Delivery address input
+	protected _email: HTMLInputElement; // Email input
+	protected _phone: HTMLInputElement; // Phone number input
+	protected _validationErrors: Set<string>; // Current validation errors
+	protected _form: HTMLFormElement; // The form element itself
 
-	// Collection of payment method selection buttons
-	protected _paymentButtons: NodeListOf<HTMLButtonElement>;
+	constructor(container: HTMLElement, events: IEvents) {
+		super(container, events);
 
-	// Input fields for user data
-	protected _address: HTMLInputElement;
-	protected _email: HTMLInputElement;
-	protected _phone: HTMLInputElement;
+		// Initialize form elements using ensureElement utility
+		this._submit = ensureElement<HTMLButtonElement>(
+			'.form__submit',
+			this.container
+		);
+		this._errors = ensureElement<HTMLElement>('.form__errors', this.container);
+		this._paymentButtons = this.container.querySelectorAll('.form__radio');
+		this._address = ensureElement<HTMLInputElement>(
+			'input[name="address"]',
+			this.container
+		);
+		this._email = ensureElement<HTMLInputElement>(
+			'input[name="email"]',
+			this.container
+		);
+		this._phone = ensureElement<HTMLInputElement>(
+			'input[name="phone"]',
+			this.container
+		);
+		this._form = ensureElement<HTMLFormElement>('form', this.container);
+		this._validationErrors = new Set();
 
-	// Set of current validation errors
-	protected _validationErrors: Set<string>;
+		// Set up event listeners
+		this._form.addEventListener('input', this.handleInput.bind(this));
+		this._form.addEventListener('submit', this.handleSubmit.bind(this));
+	}
 
-	// Main form element reference
-	protected _form: HTMLFormElement;
+	protected handleInput(event: Event) {
+		const target = event.target as HTMLInputElement;
+		const field = target.name;
+		const value = target.value;
 
-	// Creates form instance and sets up validation handlers
-	constructor(container: HTMLElement, events: IEvents);
+		this.emit('input', { field, value });
+		this.validateForm();
+	}
 
-	// Validates all form fields and updates state
-	protected validateForm(): void;
+	protected handleSubmit(event: Event) {
+		event.preventDefault();
+		this.validateForm();
+		if (this._validationErrors.size === 0) {
+			this.emit('submit');
+		}
+	}
 
-	// Handles input field changes with validation
-	protected handleInput(event: Event): void;
+	set valid(value: boolean) {
+		this.setDisabled(this._submit, !value);
+	}
 
-	// Processes form submission with validation
-	protected handleSubmit(event: Event): void;
+	set errors(value: string[]) {
+		this._validationErrors = new Set(value);
+		this.setText(this._errors, value.join(', '));
+	}
 
-	// Updates submit button state based on validity
-	set valid(value: boolean);
-
-	// Updates error message display
-	set errors(value: string[]);
-
-	// Renders form with current state
-	render(state: IFormState): HTMLElement;
+	render(state: Partial<IFormState>): HTMLElement {
+		const { valid, errors } = state;
+		if (valid !== undefined) {
+			this.valid = valid;
+		}
+		if (errors !== undefined) {
+			this.errors = errors;
+		}
+		return this.container;
+	}
 }
 ```
+
+Key features:
+
+- Real-time input validation
+- Error message management
+- Payment method selection
+- Form submission handling
+- Type-safe event emission
+- Utility function usage for safe element selection
 
 ##### Success
 
-Component for displaying successful order completion. Shows order summary and confirmation details.
+Component for displaying successful order completion. Shows order summary and confirmation details with close functionality.
 
 ```typescript
-class Success extends Component<ISuccessProps> {
-	// Element displaying total amount
-	protected _total: HTMLElement;
+interface ISuccess {
+	total: number; // Total amount spent in synapses
+}
 
-	// Element showing order identifier
-	protected _id: HTMLElement;
+export class Success extends Component<ISuccess> {
+	protected _close: HTMLElement; // Close button element
+	protected _total: HTMLElement; // Element displaying total amount
 
-	// Creates success message component
-	constructor(container: HTMLElement);
+	constructor(container: HTMLElement, events: IEvents) {
+		super(container, events);
 
-	// Sets the total amount with proper formatting
-	protected setTotal(value: number): void;
+		// Initialize elements using ensureElement utility
+		this._close = ensureElement<HTMLElement>(
+			'.order-success__close',
+			this.container
+		);
+		this._total = ensureElement<HTMLElement>(
+			'.order-success__description',
+			this.container
+		);
 
-	// Sets the order identifier
-	protected setId(value: string): void;
+		// Set up close button handler
+		if (this._close) {
+			this._close.addEventListener('click', () => {
+				this.events.emit('success:close');
+			});
+		}
+	}
 
-	// Renders success message with order details
-	render(data: ISuccessProps): HTMLElement;
+	/**
+	 * Updates the displayed total amount with currency formatting
+	 */
+	set total(total: number) {
+		this.setText(this._total, `Списано ${total} синапсов`);
+	}
+
+	/**
+	 * Renders the success message with the total amount
+	 */
+	render(data: ISuccess): HTMLElement {
+		this.total = data.total;
+		return this.container;
+	}
 }
 ```
+
+Key features:
+
+- Safe element selection with utility function
+- Currency formatting for total amount
+- Close button functionality
+- Event emission on close
+- Type-safe data handling
 
 ##### Basket
 
-Shopping cart component that manages the display of selected items and total amount.
+Shopping cart component that manages the display of selected items and total amount. Handles checkout process initiation.
 
 ```typescript
-class Basket extends Component<IBasketView> {
-	// Counter showing number of items
-	protected _counter: HTMLElement;
+interface IBasketView {
+	items: HTMLElement[]; // Array of rendered product elements
+	total: number; // Total price in synapses
+}
 
-	// Element displaying total amount
-	protected _total: HTMLElement;
+export class Basket extends Component<IBasketView> {
+	protected _list: HTMLElement; // Container for cart items
+	protected _total: HTMLElement; // Display for total price
+	protected _button: HTMLButtonElement; // Checkout button
 
-	// Container for basket items
-	protected _items: HTMLElement;
+	constructor(container: HTMLElement, events: IEvents) {
+		super(container, events);
 
-	// Creates basket component with event handlers
-	constructor(container: HTMLElement, events: IEvents);
+		// Initialize elements using ensureElement utility
+		this._list = ensureElement<HTMLElement>('.basket__list', this.container);
+		this._total = ensureElement<HTMLElement>('.basket__price', this.container);
+		this._button = ensureElement<HTMLButtonElement>(
+			'.basket__button',
+			this.container
+		);
 
-	// Updates item counter display
-	protected setCount(value: number): void;
+		// Set up checkout button handler
+		if (this._button) {
+			this._button.addEventListener('click', () => {
+				events.emit('basket:checkout');
+			});
+		}
+	}
 
-	// Updates total amount display
-	protected setTotal(value: number): void;
+	/**
+	 * Updates the list of items in the cart
+	 * Disables checkout button if cart is empty
+	 */
+	set items(items: HTMLElement[]) {
+		this._list.replaceChildren(...items);
+		this.setDisabled(this._button, items.length === 0);
+	}
 
-	// Renders basket with current items and total
-	render(data: IBasketView): HTMLElement;
+	/**
+	 * Renders the basket with items and total
+	 */
+	render(data: IBasketView): HTMLElement {
+		if (data.items) {
+			this.items = data.items;
+		}
+		if (data.total !== undefined) {
+			this.setText(this._total, `${data.total} синапсов`);
+		}
+		return this.container;
+	}
 }
 ```
+
+Key features:
+
+- Safe element selection with utility function
+- Dynamic item list management
+- Automatic button state management
+- Currency formatting
+- Checkout process initiation
+- Type-safe event emission
 
 ##### Page
 
-Main page component that orchestrates the layout and manages global UI elements.
+Main page component that orchestrates the layout and manages global UI elements. Handles catalog display, shopping cart counter, and page wrapper.
 
 ```typescript
-class Page extends Component<IPageState> {
-	// Container for product catalog
-	protected _catalog: HTMLElement;
+interface IPage {
+	counter: number; // Number of items in shopping cart
+	catalog: HTMLElement[]; // Array of product card elements
+}
 
-	// Shopping cart instance
-	protected _basket: Basket;
+export class Page extends Component<IPage> {
+	protected _counter: HTMLElement; // Shopping cart counter element
+	protected _catalog: HTMLElement; // Product gallery container
+	protected _wrapper: HTMLElement; // Main page wrapper
 
-	// Modal window instance
-	protected _modal: Modal;
+	constructor(container: HTMLElement, events: IEvents) {
+		super(container);
 
-	// Creates page component and initializes subcomponents
-	constructor(container: HTMLElement, events: IEvents);
+		// Initialize page elements
+		this._counter = container.querySelector('.header__basket-counter');
+		this._catalog = container.querySelector('.gallery');
+		this._wrapper = container.querySelector('.page__wrapper');
 
-	// Updates catalog display with product cards
-	set catalog(items: HTMLElement[]);
+		// Set up event listeners for counter and catalog updates
+		if (events) {
+			events.on('counter:changed', this.setCounter.bind(this));
+			events.on('catalog:changed', this.setCatalog.bind(this));
+		}
+	}
 
-	// Shows/hides loading indicator
-	protected toggleLoader(show: boolean): void;
+	/**
+	 * Updates the shopping cart counter display
+	 */
+	set counter(value: number) {
+		this.setText(this._counter, value.toString());
+	}
 
-	// Renders page with initial state
-	render(data: IPageState): HTMLElement;
+	/**
+	 * Updates the product catalog display
+	 * Replaces all current cards with new ones
+	 */
+	set catalog(items: HTMLElement[]) {
+		this._catalog.replaceChildren(...items);
+	}
+
+	/**
+	 * Event handler for counter updates
+	 */
+	protected setCounter(value: number) {
+		this.counter = value;
+	}
+
+	/**
+	 * Event handler for catalog updates
+	 */
+	protected setCatalog(items: HTMLElement[]) {
+		this.catalog = items;
+	}
+
+	/**
+	 * Renders the page with provided data
+	 */
+	render(data: Partial<IPage>): HTMLElement {
+		if (data.counter !== undefined) {
+			this.counter = data.counter;
+		}
+		if (data.catalog) {
+			this.catalog = data.catalog;
+		}
+		return this.container;
+	}
 }
 ```
+
+Key features:
+
+- Automatic counter updates through event system
+- Dynamic catalog management
+- Page wrapper for layout control
+- Event-driven updates for both counter and catalog
 
 ## Technical Reference
 
@@ -739,6 +971,60 @@ events.on('contacts:submit', (data: { email: string; phone: string }) => {
 		})
 		.catch(console.error);
 });
+```
+
+#### 4. Form Processing and Validation
+
+```typescript
+events.on('input', (data: { field: string; value: string }) => {
+	// Stage 1: Check field type and update state
+	if (
+		data.field === 'email' ||
+		data.field === 'phone' ||
+		data.field === 'address'
+	) {
+		appData.setOrderField(data.field, data.value);
+	}
+
+	// Stage 2: Form validation
+	const errors = appData.validateOrder();
+
+	// Stage 3: Update form state
+	orderForm.render({
+		valid: Object.keys(errors).length === 0,
+		errors: Object.values(errors),
+	});
+});
+```
+
+#### 5. Application Initialization
+
+```typescript
+// Stage 1: Create event system instance
+const events = new EventEmitter();
+
+// Stage 2: Initialize API client
+const api = new LarekAPI(CDN_URL, API_URL);
+
+// Stage 3: Initialize data store
+const appData = new AppData({ basket: [] }, events);
+
+// Stage 4: Restore basket from localStorage
+const basketData = localStorage.getItem('basket');
+if (basketData) {
+	const basket = JSON.parse(basketData);
+	basket.forEach((item: IProduct) => {
+		appData.addToBasket(item);
+	});
+}
+
+// Stage 5: Load initial data
+api
+	.getProductList()
+	.then((items) => {
+		appData.setCatalog(items);
+	})
+	.catch(console.error);
 ```
 
 ### Event System and API Reference

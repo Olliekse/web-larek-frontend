@@ -113,7 +113,7 @@ _Диаграмма классов UML, показывающая отношен�
 
 ##### EventEmitter
 
-Основная система обработки событий, которая позволяет компонентам общаться между всеми частями приложения.
+Основная система обработки событий, которая позволяет компонентам общаться между всеми частями приложения. Поддерживает сопоставление шаблонов с помощью RegExp для имен событий.
 
 ```typescript
 type EventName = string | RegExp;
@@ -139,7 +139,7 @@ export class EventEmitter implements IEvents {
 		this._events = new Map<EventName, Set<Subscriber>>();
 	}
 
-	// Установка обработчика события
+	// Установка обработчика события с поддержкой строк и RegExp шаблонов
 	on<T extends object>(eventName: EventName, callback: (event: T) => void) {
 		if (!this._events.has(eventName)) {
 			this._events.set(eventName, new Set<Subscriber>());
@@ -157,7 +157,7 @@ export class EventEmitter implements IEvents {
 		}
 	}
 
-	// Вызов события с данными
+	// Вызов события с данными, поддержка сопоставления шаблонов
 	emit<T extends object>(eventName: string, data?: T) {
 		this._events.forEach((subscribers, name) => {
 			if (name === '*')
@@ -176,14 +176,14 @@ export class EventEmitter implements IEvents {
 		});
 	}
 
-	// Прослушивание всех событий
+	// Прослушивание всех событий с помощью wildcard
 	onAll(callback: (event: EmitterEvent) => void) {
 		this.on('*', callback);
 	}
 
 	// Сброс всех обработчиков
 	offAll() {
-		this._events = new Map<string, Set<Subscriber>>();
+		this._events = new Map<EventName, Set<Subscriber>>();
 	}
 
 	// Создание триггера, генерирующего событие при вызове
@@ -198,9 +198,16 @@ export class EventEmitter implements IEvents {
 }
 ```
 
+Ключевые особенности:
+
+- Сопоставление шаблонов с помощью RegExp для имен событий
+- Прослушивание всех событий с помощью '\*'
+- Типобезопасная обработка данных событий
+- Поддержка контекста событий в триггерах
+
 ##### Component
 
-Абстрактный базовый класс для всех UI-компонентов в приложении. Обеспечивает общую функциональность для рендеринга и обработки событий.
+Абстрактный базовый класс для всех UI-компонентов в приложении. Обеспечивает общую функциональность для рендеринга и обработки событий с надежной типобезопасностью и проверкой ошибок.
 
 ```typescript
 export abstract class Component<T> {
@@ -220,7 +227,7 @@ export abstract class Component<T> {
 	}
 
 	/**
-	 * Устанавливает текстовое содержимое HTML-элемента
+	 * Устанавливает текстовое содержимое HTML-элемента с проверкой на null
 	 */
 	protected setText(element: HTMLElement, value: unknown) {
 		if (element) {
@@ -229,7 +236,7 @@ export abstract class Component<T> {
 	}
 
 	/**
-	 * Устанавливает источник и альтернативный текст для элемента изображения
+	 * Устанавливает источник и альтернативный текст для элемента изображения с валидацией
 	 */
 	protected setImage(element: HTMLImageElement, src: string, alt?: string) {
 		if (element) {
@@ -254,7 +261,7 @@ export abstract class Component<T> {
 	}
 
 	/**
-	 * Отправляет событие через эмиттер событий компонента
+	 * Отправляет событие через эмиттер событий компонента с типобезопасностью
 	 */
 	protected emit(event: string, payload?: object) {
 		if (this.events) {
@@ -270,9 +277,16 @@ export abstract class Component<T> {
 }
 ```
 
+Ключевые особенности:
+
+- Параметр обобщенного типа для данных компонента
+- Проверка на null и валидация для операций с DOM
+- Типобезопасная отправка событий
+- Защищенные вспомогательные методы для общих операций с DOM
+
 ##### Model
 
-Базовый класс для всех моделей данных в приложении. Реализует управление состоянием с безопасными обновлениями типов.
+Базовый класс для всех моделей данных в приложении. Реализует управление состоянием с типобезопасными обновлениями и отправкой событий.
 
 ```typescript
 /**
@@ -317,6 +331,50 @@ export abstract class Model<T> {
 	 */
 	protected emitChanges(event: string) {
 		this.events.emit(event);
+	}
+}
+```
+
+Ключевые особенности:
+- Параметр обобщенного типа для данных состояния
+- Проверка типа во время выполнения
+- Защищенные методы мутации состояния
+- Обновления состояния на основе событий
+- Паттерн неизменяемого состояния
+
+Пример реализации (AppData):
+```typescript
+export class AppData extends Model<IAppState> {
+	// Типы действий для мутаций состояния
+	export enum ActionType {
+		SET_CATALOG = 'SET_CATALOG',
+		ADD_TO_BASKET = 'ADD_TO_BASKET',
+		REMOVE_FROM_BASKET = 'REMOVE_FROM_BASKET',
+		CLEAR_BASKET = 'CLEAR_BASKET',
+		SET_PREVIEW = 'SET_PREVIEW',
+		UPDATE_ORDER = 'UPDATE_ORDER',
+	}
+
+	private dispatch(
+		type: ActionType,
+		payload: IProduct[] | IProduct | string | OrderUpdatePayload | null
+	) {
+		// Обновления состояния с соответствующими событиями
+		const eventMap: Record<ActionType, string> = {
+			[ActionType.SET_CATALOG]: 'items:changed',
+			[ActionType.ADD_TO_BASKET]: 'basket:changed',
+			[ActionType.REMOVE_FROM_BASKET]: 'basket:changed',
+			[ActionType.CLEAR_BASKET]: 'basket:changed',
+			[ActionType.SET_PREVIEW]: 'preview:changed',
+			[ActionType.UPDATE_ORDER]: 'order:changed',
+		};
+
+		// Обновление состояния и отправка события изменения
+		this.updateState({
+			...this.getState(),
+			...newState,
+		});
+		this.emitChanges(eventMap[type]);
 	}
 }
 ```
@@ -401,7 +459,7 @@ class Card extends Component<ICard> {
 
 ##### PreviewCard
 
-Расши��енная версия компонента Card для детального просмотра продуктов. Добавляет возможность отображения описания, сохраняя всю базовую функциональность карточки.
+Расширенная версия компонента Card для детального просмотра продуктов. Добавляет возможность отображения описания, сохраняя всю базовую функциональность карточки.
 
 ```typescript
 class PreviewCard extends Card {
@@ -456,136 +514,308 @@ class Modal extends Component<IModalData> {
 
 ##### Form
 
-Компонент формы, который обрабатывает проверку ввода пользователя и отправку данных. Поддерживает как формы заказа, так и контактной информации с проверкой в реальном времени.
+Компонент формы, который обрабатывает валидацию пользовательского ввода и отправку данных. Поддерживает как формы заказа, так и контактной информации с валидацией в реальном времени и обработкой ошибок.
 
 ```typescript
-class Form extends Component<IFormState> {
-	// Кнопка отправки, которая запускает отправку формы
-	protected _submit: HTMLButtonElement;
+interface IFormState {
+	valid: boolean; // Является ли форма валидной в данный момент
+	errors: string[]; // Список сообщений об ошибках валидации
+}
 
-	// Контейнер для сообщений об ошибках валидации
-	protected _errors: HTMLElement;
+export class Form extends Component<IFormState> {
+	protected _submit: HTMLButtonElement; // Кнопка отправки формы
+	protected _errors: HTMLElement; // Контейнер для сообщений об ошибках
+	protected _paymentButtons: NodeListOf<HTMLButtonElement>; // Кнопки выбора способа оплаты
+	protected _address: HTMLInputElement; // Поле ввода адреса доставки
+	protected _email: HTMLInputElement; // Поле ввода email
+	protected _phone: HTMLInputElement; // Поле ввода телефона
+	protected _validationErrors: Set<string>; // Текущие ошибки валидации
+	protected _form: HTMLFormElement; // Сам элемент формы
 
-	// Коллекция кнопок выбора метода оплаты
-	protected _paymentButtons: NodeListOf<HTMLButtonElement>;
+	constructor(container: HTMLElement, events: IEvents) {
+		super(container, events);
 
-	// Поля ввода для данных пользователя
-	protected _address: HTMLInputElement;
-	protected _email: HTMLInputElement;
-	protected _phone: HTMLInputElement;
+		// Инициализация элементов формы с использованием утилиты ensureElement
+		this._submit = ensureElement<HTMLButtonElement>(
+			'.form__submit',
+			this.container
+		);
+		this._errors = ensureElement<HTMLElement>('.form__errors', this.container);
+		this._paymentButtons = this.container.querySelectorAll('.form__radio');
+		this._address = ensureElement<HTMLInputElement>(
+			'input[name="address"]',
+			this.container
+		);
+		this._email = ensureElement<HTMLInputElement>(
+			'input[name="email"]',
+			this.container
+		);
+		this._phone = ensureElement<HTMLInputElement>(
+			'input[name="phone"]',
+			this.container
+		);
+		this._form = ensureElement<HTMLFormElement>('form', this.container);
+		this._validationErrors = new Set();
 
-	// Набор текущих ошибок валидации
-	protected _validationErrors: Set<string>;
+		// Настройка обработчиков событий
+		this._form.addEventListener('input', this.handleInput.bind(this));
+		this._form.addEventListener('submit', this.handleSubmit.bind(this));
+	}
 
-	// Основной элемент формы
-	protected _form: HTMLFormElement;
+	protected handleInput(event: Event) {
+		const target = event.target as HTMLInputElement;
+		const field = target.name;
+		const value = target.value;
 
-	// Создает экземпляр формы и настраивает обработчики валидации
-	constructor(container: HTMLElement, events: IEvents);
+		this.emit('input', { field, value });
+		this.validateForm();
+	}
 
-	// Проверяет все поля формы и обновляет состояние
-	protected validateForm(): void;
+	protected handleSubmit(event: Event) {
+		event.preventDefault();
+		this.validateForm();
+		if (this._validationErrors.size === 0) {
+			this.emit('submit');
+		}
+	}
 
-	// Обрабатывает изменения в полях ввода с проверкой
-	protected handleInput(event: Event): void;
+	set valid(value: boolean) {
+		this.setDisabled(this._submit, !value);
+	}
 
-	// Обрабатывает отправку формы с проверкой
-	protected handleSubmit(event: Event): void;
+	set errors(value: string[]) {
+		this._validationErrors = new Set(value);
+		this.setText(this._errors, value.join(', '));
+	}
 
-	// Обновляет состояние кнопки отправки в зависимости от валидности
-	set valid(value: boolean);
-
-	// Обновляет отображение сообщений об ошибках
-	set errors(value: string[]);
-
-	// Рендерит форму с текущим состоянием
-	render(state: IFormState): HTMLElement;
+	render(state: Partial<IFormState>): HTMLElement {
+		const { valid, errors } = state;
+		if (valid !== undefined) {
+			this.valid = valid;
+		}
+		if (errors !== undefined) {
+			this.errors = errors;
+		}
+		return this.container;
+	}
 }
 ```
+
+Ключевые особенности:
+
+- Валидация ввода в реальном времени
+- Управление сообщениями об ошибках
+- Выбор способа оплаты
+- Обработка отправки формы
+- Типобезопасная отправка событий
+- Использование утилиты для безопасного выбора элементов
 
 ##### Success
 
-Компонент для отображения успешного завершения заказа. Показывает сводку заказа и детали подтверждения.
+Компонент для отображения успешного завершения заказа. Показывает сводку заказа и детали подтверждения с функцией закрытия.
 
 ```typescript
-class Success extends Component<ISuccessProps> {
-	// Элемент, отображающий общую сумму
-	protected _total: HTMLElement;
+interface ISuccess {
+	total: number; // Общая сумма в синапсах
+}
 
-	// Элемент, показывающий идентификатор заказа
-	protected _id: HTMLElement;
+export class Success extends Component<ISuccess> {
+	protected _close: HTMLElement; // Элемент кнопки закрытия
+	protected _total: HTMLElement; // Элемент отображения общей суммы
 
-	// Создает компонент сообщения об успешном заказе
-	constructor(container: HTMLElement);
+	constructor(container: HTMLElement, events: IEvents) {
+		super(container, events);
 
-	// Устанавливает общую сумму с правильным форматированием
-	protected setTotal(value: number): void;
+		// Инициализация элементов с использованием утилиты ensureElement
+		this._close = ensureElement<HTMLElement>(
+			'.order-success__close',
+			this.container
+		);
+		this._total = ensureElement<HTMLElement>(
+			'.order-success__description',
+			this.container
+		);
 
-	// Устанавливает идентификатор заказа
-	protected setId(value: string): void;
+		// Настройка обработчика кнопки закрытия
+		if (this._close) {
+			this._close.addEventListener('click', () => {
+				this.events.emit('success:close');
+			});
+		}
+	}
 
-	// Рендерит сообщение об успешном заказе с деталями заказа
-	render(data: ISuccessProps): HTMLElement;
+	/**
+	 * Обновляет отображаемую общую сумму с форматированием валюты
+	 */
+	set total(total: number) {
+		this.setText(this._total, `Списано ${total} синапсов`);
+	}
+
+	/**
+	 * Рендерит сообщение об успешном заказе с общей суммой
+	 */
+	render(data: ISuccess): HTMLElement {
+		this.total = data.total;
+		return this.container;
+	}
 }
 ```
+
+Ключевые особенности:
+
+- Безопасный выбор элементов с помощью утилиты
+- Форматирование суммы с указанием валюты
+- Функциональность кнопки закрытия
+- Отправка события при закрытии
+- Типобезопасная обработка данных
 
 ##### Basket
 
-Компонент корзины покупок, который управляет отображением выбранных товаров и общей суммой.
+Компонент корзины покупок, который управляет отображением выбранных товаров и общей суммой. Обрабатывает инициацию процесса оформления заказа.
 
 ```typescript
-class Basket extends Component<IBasketView> {
-	// Счетчик, показывающий количество товаров
-	protected _counter: HTMLElement;
+interface IBasketView {
+	items: HTMLElement[]; // Массив отрендеренных элементов товаров
+	total: number; // Общая цена в синапсах
+}
 
-	// Элемент, отображающий общую сумму
-	protected _total: HTMLElement;
+export class Basket extends Component<IBasketView> {
+	protected _list: HTMLElement; // Контейнер для товаров корзины
+	protected _total: HTMLElement; // Отображение общей суммы
+	protected _button: HTMLButtonElement; // Кнопка оформления заказа
 
-	// Контейнер для товаров в корзине
-	protected _items: HTMLElement;
+	constructor(container: HTMLElement, events: IEvents) {
+		super(container, events);
 
-	// Создает компонент корзины с обработчиками событий
-	constructor(container: HTMLElement, events: IEvents);
+		// Инициализация элементов с использованием утилиты ensureElement
+		this._list = ensureElement<HTMLElement>('.basket__list', this.container);
+		this._total = ensureElement<HTMLElement>('.basket__price', this.container);
+		this._button = ensureElement<HTMLButtonElement>(
+			'.basket__button',
+			this.container
+		);
 
-	// Обновляет отображение счетчика товаров
-	protected setCount(value: number): void;
+		// Настройка обработчика кнопки оформления заказа
+		if (this._button) {
+			this._button.addEventListener('click', () => {
+				events.emit('basket:checkout');
+			});
+		}
+	}
 
-	// Обновляет отображение общей суммы
-	protected setTotal(value: number): void;
+	/**
+	 * Обновляет список товаров в корзине
+	 * Отключает кнопку оформления заказа, если корзина пуста
+	 */
+	set items(items: HTMLElement[]) {
+		this._list.replaceChildren(...items);
+		this.setDisabled(this._button, items.length === 0);
+	}
 
-	// Рендерит корзину с текущими товарами и общей суммой
-	render(data: IBasketView): HTMLElement;
+	/**
+	 * Рендерит корзину с товарами и общей суммой
+	 */
+	render(data: IBasketView): HTMLElement {
+		if (data.items) {
+			this.items = data.items;
+		}
+		if (data.total !== undefined) {
+			this.setText(this._total, `${data.total} синапсов`);
+		}
+		return this.container;
+	}
 }
 ```
+
+Ключевые особенности:
+
+- Безопасный выбор элементов с помощью утилиты
+- Динамическое управление списком товаров
+- Автоматическое управление состоянием кнопки
+- Форматирование валюты
+- Инициация процесса оформления заказа
+- Типобезопасная отправка событий
 
 ##### Page
 
-Основной компонент страницы, который организует макет и управляет глобальными элементами интерфейса.
+Основной компонент страницы, который организует макет и управляет глобальными элементами интерфейса. Обрабатывает отображение каталога, счетчик корзины покупок и обертку страницы.
 
 ```typescript
-class Page extends Component<IPageState> {
-	// Контейнер для каталога продуктов
-	protected _catalog: HTMLElement;
+interface IPage {
+	counter: number; // Количество товаров в корзине
+	catalog: HTMLElement[]; // Массив элементов карточек товаров
+}
 
-	// Экземпляр корзины покупок
-	protected _basket: Basket;
+export class Page extends Component<IPage> {
+	protected _counter: HTMLElement; // Элемент счетчика корзины
+	protected _catalog: HTMLElement; // Контейнер галереи товаров
+	protected _wrapper: HTMLElement; // Обертка основной страницы
 
-	// Экземпляр модального окна
-	protected _modal: Modal;
+	constructor(container: HTMLElement, events: IEvents) {
+		super(container);
 
-	// Создает компонент страницы и инициализирует подкомпоненты
-	constructor(container: HTMLElement, events: IEvents);
+		// Инициализация элементов страницы
+		this._counter = container.querySelector('.header__basket-counter');
+		this._catalog = container.querySelector('.gallery');
+		this._wrapper = container.querySelector('.page__wrapper');
 
-	// Обновляет отображение каталога с карточками продуктов
-	set catalog(items: HTMLElement[]);
+		// Настройка слушателей событий для счетчика и каталога
+		if (events) {
+			events.on('counter:changed', this.setCounter.bind(this));
+			events.on('catalog:changed', this.setCatalog.bind(this));
+		}
+	}
 
-	// Показывает/скрывает индикатор загрузки
-	protected toggleLoader(show: boolean): void;
+	/**
+	 * Обновляет отображение счетчика корзины
+	 */
+	set counter(value: number) {
+		this.setText(this._counter, value.toString());
+	}
 
-	// Рендерит страницу с начальным состоянием
-	render(data: IPageState): HTMLElement;
+	/**
+	 * Обновляет отображение каталога товаров
+	 * Заменяет все текущие карточки новыми
+	 */
+	set catalog(items: HTMLElement[]) {
+		this._catalog.replaceChildren(...items);
+	}
+
+	/**
+	 * Обработчик событий обновления счетчика
+	 */
+	protected setCounter(value: number) {
+		this.counter = value;
+	}
+
+	/**
+	 * Обработчик событий обновления каталога
+	 */
+	protected setCatalog(items: HTMLElement[]) {
+		this.catalog = items;
+	}
+
+	/**
+	 * Рендерит страницу с предоставленными данными
+	 */
+	render(data: Partial<IPage>): HTMLElement {
+		if (data.counter !== undefined) {
+			this.counter = data.counter;
+		}
+		if (data.catalog) {
+			this.catalog = data.catalog;
+		}
+		return this.container;
+	}
 }
 ```
+
+Ключевые особенности:
+
+- Автоматическое обновление счетчика через систему событий
+- Динамическое управление каталогом
+- Управление оберткой страницы для макета
+- Обновления на основе событий для счетчика и каталога
 
 ## Техническая справка
 
@@ -739,6 +969,60 @@ events.on('contacts:submit', (data: { email: string; phone: string }) => {
 		})
 		.catch(console.error);
 });
+```
+
+#### 4. Обработка форм и валидация
+
+```typescript
+events.on('input', (data: { field: string; value: string }) => {
+	// Этап 1: Проверка типа поля и обновление состояния
+	if (
+		data.field === 'email' ||
+		data.field === 'phone' ||
+		data.field === 'address'
+	) {
+		appData.setOrderField(data.field, data.value);
+	}
+
+	// Этап 2: Валидация формы
+	const errors = appData.validateOrder();
+
+	// Этап 3: Обновление состояния формы
+	orderForm.render({
+		valid: Object.keys(errors).length === 0,
+		errors: Object.values(errors),
+	});
+});
+```
+
+#### 5. Инициализация приложения
+
+```typescript
+// Этап 1: Создание экземпляра системы событий
+const events = new EventEmitter();
+
+// Этап 2: Инициализация API клиента
+const api = new LarekAPI(CDN_URL, API_URL);
+
+// Этап 3: Инициализация хранилища данных
+const appData = new AppData({ basket: [] }, events);
+
+// Этап 4: Восстановление корзины из localStorage
+const basketData = localStorage.getItem('basket');
+if (basketData) {
+	const basket = JSON.parse(basketData);
+	basket.forEach((item: IProduct) => {
+		appData.addToBasket(item);
+	});
+}
+
+// Этап 5: Загрузка начальных данных
+api
+	.getProductList()
+	.then((items) => {
+		appData.setCatalog(items);
+	})
+	.catch(console.error);
 ```
 
 ### Система событий и справка по API
